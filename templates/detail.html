@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}{{ app_info.get('appNumber','') }} — IRCC Tracker{% endblock %}
+
+{% block extra_css %}
+.back-link { font-size: .85rem; color: #64748b; margin-bottom: 1.25rem; display: inline-block; }
+.back-link:hover { color: #94a3b8; }
+
+/* ─── Header card ── */
+.detail-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    flex-wrap: wrap; gap: 1rem; margin-bottom: .8rem;
+}
+.detail-title { font-size: 1.4rem; font-weight: 800; color: #fff; }
+.detail-meta { color: #94a3b8; font-size: .84rem; margin-bottom: 1.5rem; }
+.detail-meta span { margin-right: 1.5rem; }
+
+/* ─── Activities ── */
+.activities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem; margin-bottom: 2rem;
+}
+.activity-card {
+    display: flex; align-items: center; gap: .75rem;
+    transition: transform .2s;
+}
+.activity-card:hover { transform: translateY(-2px); }
+.activity-icon { font-size: 1.6rem; flex-shrink: 0; }
+.activity-info .act-name {
+    font-size: .82rem; font-weight: 600; color: #94a3b8;
+    text-transform: capitalize; margin-bottom: .15rem;
+}
+.activity-status {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .78rem; font-weight: 600;
+    padding: .2rem .55rem; border-radius: 6px;
+}
+.activity-status.completed  { background: rgba(34,197,94,.12); color: #86efac; }
+.activity-status.in-progress { background: rgba(59,130,246,.15); color: #93bbfd; }
+.activity-status.not-started { background: rgba(156,163,175,.1); color: #9ca3af; }
+
+/* Pulse animation for in-progress */
+.activity-status.in-progress::before {
+    content: '';
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #3b82f6;
+    animation: blink 1.5s ease-in-out infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ─── Info Grid ── */
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: .8rem; margin-bottom: 2rem;
+}
+.info-item .info-label {
+    font-size: .72rem; font-weight: 600; color: #64748b;
+    text-transform: uppercase; letter-spacing: .05em; margin-bottom: .15rem;
+}
+.info-item .info-value { font-size: .9rem; color: #e0e6f0; }
+
+/* ─── Timeline ── */
+.section-title {
+    font-size: 1.1rem; font-weight: 700; color: #fff;
+    margin-bottom: 1.25rem;
+    display: flex; align-items: center; gap: .5rem;
+}
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before {
+    content: ''; position: absolute;
+    left: 7px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, rgba(230,57,70,.4), rgba(126,168,248,.2), rgba(255,255,255,.05));
+}
+.tl-item {
+    position: relative;
+    padding-bottom: 1.5rem;
+    animation: fadeIn .4s ease;
+}
+.tl-item:last-child { padding-bottom: 0; }
+.tl-dot {
+    position: absolute;
+    left: -2rem; top: .3rem;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 2px solid #e63946;
+    z-index: 2;
+}
+.tl-item:first-child .tl-dot { background: #e63946; box-shadow: 0 0 8px rgba(230,57,70,.5); }
+.tl-decoded {
+    font-size: .9rem; font-weight: 600; color: #e0e6f0;
+    margin-bottom: .15rem;
+}
+.tl-key { font-size: .75rem; color: #64748b; font-family: monospace; }
+.tl-date { font-size: .78rem; color: #7ea8f8; }
+.tl-loaded { font-size: .72rem; color: #4b5563; }
+
+.refresh-row {
+    display: flex; justify-content: flex-end; margin-bottom: 1rem;
+}
+{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('applications') }}" class="back-link fade-in">← Back to Applications</a>
+
+<div class="glass fade-in" style="margin-bottom: 1.5rem;">
+    <div class="detail-header">
+        <div>
+            <div class="detail-title">{{ app_info.get('appNumber', 'N/A') }}</div>
+        </div>
+        <span class="status-badge status-{{ app_info.get('status','') }}">
+            <span class="dot dot-{{ app_info.get('status','') }}"></span>
+            {{ status_labels.get(app_info.get('status',''), app_info.get('status','')) }}
+        </span>
+    </div>
+    <p class="detail-meta">
+        <span>📁 {{ lob_map.get(app_info.get('lob',''), app_info.get('lob','')) }}</span>
+        <span>📍 {{ province_map.get(app_info.get('destProv', 0), 'N/A') }}</span>
+        <span>👤 {{ app_info.get('firstName','') }} {{ app_info.get('lastName','') }}</span>
+    </p>
+
+    <div class="info-grid">
+        <div class="info-item">
+            <div class="info-label">Date Received</div>
+            <div class="info-value">{{ app_info.get('dateRecieved','N/A')[:10] }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Last Updated</div>
+            <div class="info-value">{{ app_info.get('lastUpdated','N/A')[:10] }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">UCI</div>
+            <div class="info-value">{{ rel.get('uci','N/A') }}</div>
+        </div>
+        <div class="info-item">
+            <div class="info-label">Email</div>
+            <div class="info-value">{{ rel.get('email','N/A') }}</div>
+        </div>
+    </div>
+</div>
+
+<!-- Activities -->
+<div class="glass fade-in" style="margin-bottom: 1.5rem; animation-delay: .1s;">
+    <div class="section-title">📊 Activities</div>
+    <div class="activities-grid">
+        {% for act_key, act_val in activities.items() %}
+        <div class="glass-subtle activity-card" style="animation-delay: {{ loop.index0 * 0.06 }}s;">
+            <span class="activity-icon">{{ activity_icons.get(act_key, '📌') }}</span>
+            <div class="activity-info">
+                <div class="act-name">{{ act_key }}</div>
+                <span class="activity-status {{ activity_status_classes.get(act_val, '') }}">
+                    {{ status_labels.get(act_val, act_val) if act_val in status_labels else act_val.replace('notStarted','Not Started').replace('inProgress','In Progress').replace('completed','Completed') }}
+                </span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- History Timeline -->
+<div class="glass fade-in" style="animation-delay: .2s;">
+    <div class="section-title">📜 Application History</div>
+
+    <div class="refresh-row">
+        <button class="btn btn-secondary" id="refresh-btn" onclick="refreshStatus()">
+            🔄 Refresh
+        </button>
+    </div>
+
+    <div class="timeline" id="history-timeline">
+        {% for entry in history %}
+        <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-decoded">{{ entry.decoded }}</div>
+            <div class="tl-key">Key: {{ entry.get('key','') }}{% if entry.get('actType') %} &middot; actType: {{ entry.actType }}{% endif %}{% if entry.get('actStatus') %} &middot; actStatus: {{ entry.actStatus }}{% endif %}</div>
+            <div class="tl-date">{{ entry.get('dateCreated','')[:10] }}</div>
+            <div class="tl-loaded">Loaded: {{ entry.get('dateLoaded','')[:10] }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function refreshStatus() {
+    const btn = document.getElementById('refresh-btn');
+    btn.textContent = '⏳ Loading...';
+    btn.disabled = true;
+    try {
+        const resp = await fetch('/api/status/{{ app_info.get("appNumber","") }}');
+        if (resp.ok) { location.reload(); }
+        else { alert('Failed to refresh. Session may have expired.'); }
+    } catch(e) { alert('Network error.'); }
+    btn.textContent = '🔄 Refresh';
+    btn.disabled = false;
+}
+</script>
+{% endblock %}

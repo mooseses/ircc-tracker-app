@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% block title %}Settings — IRCC Tracker{% endblock %}
+
+{% block extra_css %}
+.settings-section {
+    margin-bottom: 1.5rem;
+}
+.settings-section .section-header {
+    display: flex; align-items: center; gap: .6rem;
+    margin-bottom: 1rem;
+}
+.settings-section .section-header h2 {
+    font-size: 1rem; font-weight: 700; color: #fff;
+}
+.settings-section .section-header .icon { font-size: 1.2rem; }
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .8rem;
+}
+@media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
+
+.toggle-row {
+    display: flex; align-items: center; gap: .75rem;
+    margin-bottom: 1rem;
+    padding: .6rem .8rem;
+    border-radius: 8px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.05);
+}
+.toggle-row label { font-size: .85rem; color: #cbd5e1; cursor: pointer; }
+.toggle-switch {
+    position: relative; width: 40px; height: 22px; flex-shrink: 0;
+}
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+    position: absolute; cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255,255,255,.1);
+    border-radius: 22px; transition: .3s;
+}
+.toggle-slider::before {
+    content: '';
+    position: absolute; width: 16px; height: 16px;
+    left: 3px; bottom: 3px;
+    background: #9ca3af;
+    border-radius: 50%; transition: .3s;
+}
+.toggle-switch input:checked + .toggle-slider { background: rgba(230,57,70,.5); }
+.toggle-switch input:checked + .toggle-slider::before {
+    transform: translateX(18px); background: #e63946;
+}
+
+.btn-row {
+    display: flex; gap: .75rem; align-items: center;
+    margin-top: 1.5rem;
+}
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title fade-in">Settings</h1>
+<p class="page-subtitle fade-in">Configure polling interval and notification channels.</p>
+
+<form method="POST" action="{{ url_for('settings') }}">
+
+    <!-- Polling -->
+    <div class="glass settings-section fade-in">
+        <div class="section-header">
+            <span class="icon">⏱️</span>
+            <h2>Polling Interval</h2>
+        </div>
+        <div class="form-group" style="max-width:300px;">
+            <label class="form-label" for="poll_interval">Check every (minutes)</label>
+            <input class="form-input" type="number" id="poll_interval" name="poll_interval"
+                   value="{{ cfg.get('poll_interval', 30) }}" min="5" max="1440">
+        </div>
+    </div>
+
+    <!-- Email -->
+    <div class="glass settings-section fade-in" style="animation-delay:.06s">
+        <div class="section-header">
+            <span class="icon">📧</span>
+            <h2>Email (SMTP)</h2>
+        </div>
+        <div class="toggle-row">
+            <label class="toggle-switch">
+                <input type="checkbox" name="email_enabled"
+                       {% if cfg.get('notifications',{}).get('email',{}).get('enabled') %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <label>Enable email notifications</label>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">SMTP Host</label>
+                <input class="form-input" name="smtp_host" placeholder="smtp.gmail.com"
+                       value="{{ cfg.get('notifications',{}).get('email',{}).get('smtp_host','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">SMTP Port</label>
+                <input class="form-input" name="smtp_port" placeholder="587"
+                       value="{{ cfg.get('notifications',{}).get('email',{}).get('smtp_port','587') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">SMTP User</label>
+                <input class="form-input" name="smtp_user" placeholder="your@email.com"
+                       value="{{ cfg.get('notifications',{}).get('email',{}).get('smtp_user','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">SMTP Password</label>
+                <input class="form-input" type="password" name="smtp_pass" placeholder="App password"
+                       value="{{ cfg.get('notifications',{}).get('email',{}).get('smtp_pass','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">From</label>
+                <input class="form-input" name="from_email" placeholder="noreply@example.com"
+                       value="{{ cfg.get('notifications',{}).get('email',{}).get('from_email','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">To</label>
+                <input class="form-input" name="to_email" placeholder="you@example.com"
+                       value="{{ cfg.get('notifications',{}).get('email',{}).get('to_email','') }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Slack -->
+    <div class="glass settings-section fade-in" style="animation-delay:.12s">
+        <div class="section-header">
+            <span class="icon">💬</span>
+            <h2>Slack</h2>
+        </div>
+        <div class="toggle-row">
+            <label class="toggle-switch">
+                <input type="checkbox" name="slack_enabled"
+                       {% if cfg.get('notifications',{}).get('slack',{}).get('enabled') %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <label>Enable Slack notifications</label>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Incoming Webhook URL</label>
+            <input class="form-input" name="slack_webhook" placeholder="https://hooks.slack.com/services/..."
+                   value="{{ cfg.get('notifications',{}).get('slack',{}).get('webhook_url','') }}">
+        </div>
+    </div>
+
+    <!-- Telegram -->
+    <div class="glass settings-section fade-in" style="animation-delay:.18s">
+        <div class="section-header">
+            <span class="icon">✈️</span>
+            <h2>Telegram</h2>
+        </div>
+        <div class="toggle-row">
+            <label class="toggle-switch">
+                <input type="checkbox" name="telegram_enabled"
+                       {% if cfg.get('notifications',{}).get('telegram',{}).get('enabled') %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <label>Enable Telegram notifications</label>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Bot Token</label>
+                <input class="form-input" name="telegram_token" placeholder="123456:ABC-DEF..."
+                       value="{{ cfg.get('notifications',{}).get('telegram',{}).get('bot_token','') }}">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Chat ID</label>
+                <input class="form-input" name="telegram_chat_id" placeholder="-1001234567890"
+                       value="{{ cfg.get('notifications',{}).get('telegram',{}).get('chat_id','') }}">
+            </div>
+        </div>
+    </div>
+
+    <!-- Webhook -->
+    <div class="glass settings-section fade-in" style="animation-delay:.24s">
+        <div class="section-header">
+            <span class="icon">🔗</span>
+            <h2>Custom Webhook</h2>
+        </div>
+        <div class="toggle-row">
+            <label class="toggle-switch">
+                <input type="checkbox" name="webhook_enabled"
+                       {% if cfg.get('notifications',{}).get('webhook',{}).get('enabled') %}checked{% endif %}>
+                <span class="toggle-slider"></span>
+            </label>
+            <label>Enable webhook notifications</label>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Webhook URL</label>
+            <input class="form-input" name="webhook_url" placeholder="https://example.com/webhook"
+                   value="{{ cfg.get('notifications',{}).get('webhook',{}).get('url','') }}">
+        </div>
+    </div>
+
+    <div class="btn-row fade-in" style="animation-delay:.3s">
+        <button class="btn btn-primary" type="submit">💾 Save Settings</button>
+        <button class="btn btn-secondary" type="button" id="test-notify-btn" onclick="testNotify()">
+            🔔 Send Test Notification
+        </button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function testNotify() {
+    const btn = document.getElementById('test-notify-btn');
+    btn.textContent = '⏳ Sending...';
+    btn.disabled = true;
+    try {
+        const resp = await fetch('/api/test-notification', {method: 'POST'});
+        const data = await resp.json();
+        if (data.ok) { alert('Test notification sent!'); }
+        else { alert('Error: ' + (data.error || 'Unknown')); }
+    } catch(e) { alert('Network error.'); }
+    btn.textContent = '🔔 Send Test Notification';
+    btn.disabled = false;
+}
+</script>
+{% endblock %}

@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Sign In — IRCC Tracker{% endblock %}
+
+{% block extra_css %}
+.login-wrapper {
+    display: flex; align-items: center; justify-content: center;
+    min-height: calc(100vh - 100px);
+}
+.login-col {
+    width: 100%; max-width: 480px;
+}
+.login-card {
+    text-align: center;
+}
+.login-card .logo-icon {
+    font-size: 3rem; margin-bottom: .5rem;
+    display: inline-block;
+    animation: pulse 2.5s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
+.login-card h1 {
+    font-size: 1.5rem; font-weight: 700; color: #fff; margin-bottom: .3rem;
+}
+.login-card p.sub { color: #94a3b8; font-size: .875rem; margin-bottom: 1.75rem; }
+.login-card .btn { width: 100%; margin-top: .5rem; }
+.login-footer { text-align: center; margin-top: 1.5rem; color: #64748b; font-size: .78rem; }
+
+/* ─── Saved Accounts ── */
+.accounts-section { margin-top: 1.25rem; }
+.accounts-title {
+    font-size: .8rem; font-weight: 600; color: #64748b;
+    text-transform: uppercase; letter-spacing: .04em;
+    margin-bottom: .6rem;
+}
+.account-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .65rem .9rem;
+    margin-bottom: .5rem;
+    border-radius: 10px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.07);
+    transition: all .2s;
+}
+.account-item:hover {
+    background: rgba(255,255,255,.08);
+    border-color: rgba(126,168,248,.2);
+}
+.account-info {
+    display: flex; align-items: center; gap: .6rem;
+}
+.account-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, #e63946, #c0392b);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .7rem; color: #fff;
+    flex-shrink: 0;
+}
+.account-uci { font-size: .88rem; color: #e0e6f0; font-weight: 500; }
+.account-actions { display: flex; gap: .4rem; }
+.btn-quick {
+    padding: .35rem .8rem;
+    border-radius: 8px; border: none;
+    background: rgba(126,168,248,.15);
+    color: #7ea8f8; font-size: .75rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+}
+.btn-quick:hover { background: rgba(126,168,248,.25); }
+.btn-remove {
+    padding: .35rem .55rem;
+    border-radius: 8px; border: none;
+    background: rgba(239,68,68,.1);
+    color: #f87171; font-size: .75rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+}
+.btn-remove:hover { background: rgba(239,68,68,.2); }
+
+.divider {
+    display: flex; align-items: center; gap: .75rem;
+    color: #4b5563; font-size: .78rem; margin: 1.25rem 0;
+}
+.divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px;
+    background: rgba(255,255,255,.06);
+}
+{% endblock %}
+
+{% block content %}
+<div class="login-wrapper fade-in">
+    <div class="login-col">
+        {% if accounts %}
+        <div class="glass accounts-section fade-in" style="margin-bottom: 1rem;">
+            <div class="accounts-title">Saved Accounts</div>
+            {% for acct in accounts %}
+            <div class="account-item">
+                <div class="account-info">
+                    <div class="account-avatar">👤</div>
+                    <span class="account-uci">{{ acct.uci }}</span>
+                </div>
+                <div class="account-actions">
+                    <form method="POST" action="{{ url_for('quick_login', uci=acct.uci) }}" style="margin:0;">
+                        <button class="btn-quick" type="submit">Sign In →</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('remove_account', uci=acct.uci) }}" style="margin:0;">
+                        <button class="btn-remove" type="submit" title="Remove">✕</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+            <div class="divider">or sign in with a different account</div>
+        </div>
+        {% endif %}
+
+        <div class="login-card glass">
+            <div class="logo-icon">🍁</div>
+            <h1>IRCC Tracker</h1>
+            <p class="sub">Sign in with your UCI and password</p>
+
+            <form method="POST" action="{{ url_for('login') }}">
+                <div class="form-group" style="text-align:left;">
+                    <label class="form-label" for="uci">UCI / Client ID / Party ID</label>
+                    <input class="form-input" type="text" id="uci" name="uci"
+                           placeholder="e.g. 0000000000" required autofocus>
+                </div>
+                <div class="form-group" style="text-align:left;">
+                    <label class="form-label" for="password">Password</label>
+                    <input class="form-input" type="password" id="password" name="password"
+                           placeholder="Enter your password" required>
+                </div>
+                <div class="form-group" style="text-align:left;">
+                    <label class="checkbox-row">
+                        <input type="checkbox" name="remember" checked> Remember this account
+                    </label>
+                </div>
+                <button class="btn btn-primary" type="submit">Sign In →</button>
+            </form>
+
+            <p class="login-footer">
+                Your credentials are stored locally on this machine only.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

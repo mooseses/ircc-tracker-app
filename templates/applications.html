@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Applications — IRCC Tracker{% endblock %}
+
+{% block extra_css %}
+.app-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.25rem;
+}
+.app-card {
+    cursor: pointer;
+    transition: transform .2s, box-shadow .2s, border-color .2s;
+}
+.app-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.25);
+    border-color: rgba(126,168,248,.25);
+}
+.app-card .card-header {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 1rem;
+}
+.app-number {
+    font-size: 1rem; font-weight: 700; color: #fff;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
+.status-badge {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .25rem .7rem;
+    border-radius: 20px;
+    font-size: .72rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: .04em;
+}
+.status-inProgress { background: rgba(59,130,246,.18); color: #93bbfd; border: 1px solid rgba(59,130,246,.25); }
+.status-approved   { background: rgba(34,197,94,.15);  color: #86efac; border: 1px solid rgba(34,197,94,.25); }
+.status-completed  { background: rgba(34,197,94,.15);  color: #86efac; border: 1px solid rgba(34,197,94,.25); }
+.status-closed     { background: rgba(156,163,175,.12);color: #9ca3af; border: 1px solid rgba(156,163,175,.2);}
+.status-refused    { background: rgba(239,68,68,.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
+.status-withdrawn  { background: rgba(156,163,175,.12);color: #9ca3af; border: 1px solid rgba(156,163,175,.2);}
+
+.dot { width: 6px; height: 6px; border-radius: 50%; }
+.dot-inProgress { background: #3b82f6; box-shadow: 0 0 6px #3b82f6; }
+.dot-approved   { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.dot-completed  { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
+.dot-closed     { background: #9ca3af; }
+.dot-refused    { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+.dot-withdrawn  { background: #9ca3af; }
+
+.card-meta { display: flex; flex-direction: column; gap: .4rem; }
+.meta-row {
+    display: flex; justify-content: space-between;
+    font-size: .82rem; color: #94a3b8;
+}
+.meta-row .label { color: #64748b; }
+.card-applicant {
+    margin-top: 1rem; padding-top: 1rem;
+    border-top: 1px solid rgba(255,255,255,.06);
+    display: flex; align-items: center; gap: .6rem;
+    font-size: .85rem; color: #cbd5e1;
+}
+.avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: linear-gradient(135deg, #e63946, #c0392b);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .75rem; color: #fff;
+    flex-shrink: 0;
+}
+.empty-state {
+    text-align: center; padding: 4rem 2rem; color: #64748b;
+}
+.empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title fade-in">Your Applications</h1>
+<p class="page-subtitle fade-in">Select an application to view its detailed status and history.</p>
+
+{% if apps %}
+<div class="app-grid">
+    {% for app in apps %}
+    {% set app_num = app.get('appNum', app.get('appNumber', app.get('applicationNumber', ''))) %}
+    {% set status = app.get('status', 'unknown') %}
+    {% set app_type = app.get('appType', app.get('lob', '')) %}
+    {% set first_name = app.get('paFirstName', app.get('firstName', '')) %}
+    {% set last_name = app.get('paLastName', app.get('lastName', '')) %}
+    <a href="{{ url_for('application_detail', app_number=app_num) }}"
+       class="glass app-card fade-in" style="animation-delay: {{ loop.index0 * 0.08 }}s; text-decoration:none; color:inherit;">
+        <div class="card-header">
+            <span class="app-number">{{ app_num }}</span>
+            <span class="status-badge status-{{ status }}">
+                <span class="dot dot-{{ status }}"></span>
+                {{ status_labels.get(status, status) }}
+            </span>
+        </div>
+        <div class="card-meta">
+            <div class="meta-row">
+                <span class="label">Type</span>
+                <span>{{ lob_map.get(app_type, app_type) }}</span>
+            </div>
+            <div class="meta-row">
+                <span class="label">Tasks</span>
+                <span>{{ app.get('tasks', 0) }} task(s)</span>
+            </div>
+            <div class="meta-row">
+                <span class="label">Last Updated</span>
+                <span>{{ app.get('lastUpdated', 'N/A')[:10] }}</span>
+            </div>
+        </div>
+        {% if first_name %}
+        <div class="card-applicant">
+            <div class="avatar">{{ first_name[0] }}{{ last_name[0] if last_name else '' }}</div>
+            <span>{{ first_name }} {{ last_name }}</span>
+        </div>
+        {% endif %}
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="glass empty-state fade-in">
+    <div class="icon">📭</div>
+    <p>No applications found on this account.</p>
+</div>
+{% endif %}
+{% endblock %}
