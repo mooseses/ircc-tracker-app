@@ -62,19 +62,33 @@ def poll_for_changes():
     # Use the first saved account for polling
     creds = accounts[0]
 
-    try:
-        auth = refresh_id_token(creds["refresh_token"])
-        id_token = auth["IdToken"]
-    except Exception as e:
-        print(f"[scheduler] Token refresh failed (user must log in again): {e}")
-        return
-
-    # Inject web push subscriptions into notification settings
+    # Inject web push subscriptions early so token-expiry alerts can use them too
     notif_settings["web_push"] = {
         "enabled": bool(cfg.get("push_subscriptions")),
         "subscriptions": cfg.get("push_subscriptions", []),
         "private_key": cfg.get("vapid", {}).get("private_key", ""),
     }
+
+    try:
+        auth = refresh_id_token(creds["refresh_token"])
+        id_token = auth["IdToken"]
+        # Token refresh succeeded — clear alert flag if it was set
+        if cfg.get("token_alert_sent"):
+            cfg["token_alert_sent"] = False
+            _save_config(cfg)
+    except Exception as e:
+        print(f"[scheduler] Token refresh failed: {e}")
+        # Send a one-time alert so the user knows polling is broken
+        if not cfg.get("token_alert_sent"):
+            notify(
+                notif_settings,
+                "IRCC Tracker — Session Expired",
+                "<p>Your IRCC session has expired. Please open the tracker and "
+                "log in again to resume automatic status monitoring.</p>",
+            )
+            cfg["token_alert_sent"] = True
+            _save_config(cfg)
+        return
 
     for app_num, old_data in list(tracked.items()):
         try:

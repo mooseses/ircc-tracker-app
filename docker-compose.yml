@@ -1,0 +1,8 @@
+services:
+  ircc-tracker:
+    build: .
+    ports:
+      - "9001:9001"
+    volumes:
+      - ./config.json:/app/config.json
+    restart: unless-stopped
