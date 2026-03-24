@@ -14,17 +14,16 @@ from flask import (
 )
 
 from tracker import (
-    authenticate, fetch_applications,
+    authenticate, refresh_id_token, fetch_applications,
     fetch_application_detail, fetch_history_map,
     decode_history_key,
 )
-from notifier import notify
+from notifier import notify, send_web_push
 from scheduler import start_scheduler
 
 # ─── App Setup ────────────────────────────────────────────────────────────────
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 
@@ -41,6 +40,49 @@ def _load_config() -> dict:
 def _save_config(cfg: dict):
     with open(CONFIG_PATH, "w") as f:
         json.dump(cfg, f, indent=2)
+
+
+def _get_or_create_secret_key() -> str:
+    """Load the Flask secret key from config, generating one if absent."""
+    cfg = _load_config()
+    if "flask_secret_key" not in cfg:
+        cfg["flask_secret_key"] = secrets.token_hex(32)
+        _save_config(cfg)
+    return cfg["flask_secret_key"]
+
+
+app.secret_key = _get_or_create_secret_key()
+
+
+def _ensure_vapid_keys() -> tuple:
+    """Return (private_key_b64url, public_key_b64url), generating and saving if absent."""
+    import base64
+    from py_vapid import Vapid
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+
+    cfg = _load_config()
+    if "vapid" in cfg:
+        priv = cfg["vapid"]["private_key"]
+        pub  = cfg["vapid"]["public_key"]
+        # Migrate old PEM format → raw base64url expected by pywebpush 2.x
+        if priv.strip().startswith("-----"):
+            from cryptography.hazmat.primitives.serialization import load_pem_private_key
+            key = load_pem_private_key(priv.encode(), password=None)
+            raw = key.private_numbers().private_value.to_bytes(32, "big")
+            priv = base64.urlsafe_b64encode(raw).rstrip(b"=").decode()
+            cfg["vapid"]["private_key"] = priv
+            _save_config(cfg)
+        return priv, pub
+
+    v = Vapid()
+    v.generate_keys()
+    raw_priv = v.private_key.private_numbers().private_value.to_bytes(32, "big")
+    private_key = base64.urlsafe_b64encode(raw_priv).rstrip(b"=").decode()
+    raw_pub = v.public_key.public_bytes(Encoding.X962, PublicFormat.UncompressedPoint)
+    public_key = base64.urlsafe_b64encode(raw_pub).rstrip(b"=").decode()
+    cfg["vapid"] = {"private_key": private_key, "public_key": public_key}
+    _save_config(cfg)
+    return private_key, public_key
 
 
 def login_required(f):
@@ -85,11 +127,10 @@ STATUS_LABELS = {
     "withdrawn": "Withdrawn",
 }
 
-ACTIVITY_ICONS = {
-    "eligibility": "📋",
-    "medical": "🏥",
-    "background": "🔍",
-    "biometrics": "🖐️",
+
+ACT_STATUS_LABELS = {
+    17: "Started",
+    33: "Completed",
 }
 
 ACTIVITY_STATUS_CLASSES = {
@@ -143,9 +184,9 @@ def login():
 
         # Step 3: Save account if "Remember account" is checked
         if remember:
-            # Add to accounts list (avoid duplicates by UCI)
+            # Save refresh token (not the password) so we never store credentials in plaintext
             existing = [a for a in saved_accounts if a.get("uci") != uci]
-            existing.append({"uci": uci, "password": password})
+            existing.append({"uci": uci, "refresh_token": auth["RefreshToken"]})
             cfg["accounts"] = existing
             _save_config(cfg)
 
@@ -164,7 +205,7 @@ def quick_login(uci):
         return redirect(url_for("login"))
 
     try:
-        auth = authenticate(account["uci"], account["password"])
+        auth = refresh_id_token(account["refresh_token"])
     except RuntimeError as e:
         flash(f"Quick login failed: {e}", "error")
         return redirect(url_for("login"))
@@ -196,31 +237,22 @@ def applications():
         return redirect(url_for("login"))
 
     if not apps:
-        # Token might have expired — try to re-auth using saved credentials
-        cfg = _load_config()
-        account = next(
-            (a for a in cfg.get("accounts", []) if a["uci"] == session.get("uci")),
-            None,
-        )
-        if account:
-            try:
-                auth = authenticate(account["uci"], account["password"])
-                session["id_token"] = auth["IdToken"]
-                apps = fetch_applications(session["id_token"])
-            except Exception:
-                pass
+        flash("No applications found, or session expired. Please log in again.", "error")
+        session.clear()
+        return redirect(url_for("login"))
 
-        if not apps:
-            flash("No applications found, or session expired. Please log in again.", "error")
-            session.clear()
-            return redirect(url_for("login"))
-
+    cfg = _load_config()
+    tracked_app_nums = set(cfg.get("tracked_apps", {}).keys())
+    from datetime import date
+    today = date.today().isoformat()
     return render_template(
         "applications.html",
         apps=apps,
+        tracked_app_nums=tracked_app_nums,
         lob_map=LOB_MAP,
         status_labels=STATUS_LABELS,
         province_map=PROVINCE_MAP,
+        today=today,
     )
 
 
@@ -228,7 +260,6 @@ def applications():
 @login_required
 def application_detail(app_number):
     try:
-        # Fetch both in parallel-ish (same thread, but fresh every time)
         data = fetch_application_detail(
             session["id_token"], app_number, session["uci"]
         )
@@ -237,11 +268,8 @@ def application_detail(app_number):
         flash(str(e), "error")
         return redirect(url_for("applications"))
 
-    # Save to tracked apps for scheduler
     cfg = _load_config()
-    cfg.setdefault("tracked_apps", {})
-    cfg["tracked_apps"][app_number] = data
-    _save_config(cfg)
+    is_tracked = app_number in cfg.get("tracked_apps", {})
 
     app_info = data.get("app", {})
     relations = data.get("relations", [])
@@ -249,24 +277,112 @@ def application_detail(app_number):
     activities = rel.get("activities", {})
     history = rel.get("history", [])
 
-    # Decode history keys and sort by dateCreated descending
+    # Separate status entries (have actStatus) from regular history
+    status_entries = []
+    regular_history = []
     for entry in history:
         entry["decoded"] = decode_history_key(entry.get("key", ""), history_map)
+        if "actStatus" in entry:
+            entry["status_label"] = ACT_STATUS_LABELS.get(entry["actStatus"], f"Status {entry['actStatus']}")
+            status_entries.append(entry)
+        else:
+            regular_history.append(entry)
 
-    history.sort(key=lambda x: x.get("dateCreated", ""), reverse=True)
+    status_entries.sort(key=lambda x: x.get("dateCreated", ""), reverse=True)
+    regular_history.sort(key=lambda x: x.get("dateCreated", ""), reverse=True)
 
     return render_template(
         "detail.html",
         app_info=app_info,
         rel=rel,
         activities=activities,
-        history=history,
+        history=regular_history,
+        status_entries=status_entries,
+        is_tracked=is_tracked,
         lob_map=LOB_MAP,
         status_labels=STATUS_LABELS,
         province_map=PROVINCE_MAP,
-        activity_icons=ACTIVITY_ICONS,
         activity_status_classes=ACTIVITY_STATUS_CLASSES,
     )
+
+
+@app.route("/application/<app_number>/track", methods=["POST"])
+@login_required
+def toggle_track(app_number):
+    """Toggle tracking on/off for a specific application."""
+    cfg = _load_config()
+    tracked = cfg.setdefault("tracked_apps", {})
+    if app_number in tracked:
+        del tracked[app_number]
+        cfg["tracked_apps"] = tracked
+        _save_config(cfg)
+        return jsonify({"tracking": False})
+    # Start tracking: fetch and store initial snapshot for change detection
+    try:
+        data = fetch_application_detail(session["id_token"], app_number, session["uci"])
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    tracked[app_number] = data
+    cfg["tracked_apps"] = tracked
+    _save_config(cfg)
+    return jsonify({"tracking": True})
+
+
+@app.route("/push/vapid-public-key")
+@login_required
+def vapid_public_key():
+    _, pub = _ensure_vapid_keys()
+    return jsonify({"public_key": pub})
+
+
+@app.route("/push/subscribe", methods=["POST"])
+@login_required
+def push_subscribe():
+    sub = request.get_json()
+    if not sub or "endpoint" not in sub:
+        return jsonify({"error": "invalid subscription"}), 400
+    cfg = _load_config()
+    subs = cfg.setdefault("push_subscriptions", [])
+    if not any(s.get("endpoint") == sub["endpoint"] for s in subs):
+        subs.append(sub)
+        _save_config(cfg)
+    return jsonify({"ok": True})
+
+
+@app.route("/push/unsubscribe", methods=["POST"])
+@login_required
+def push_unsubscribe():
+    data = request.get_json(silent=True) or {}
+    endpoint = data.get("endpoint")
+    cfg = _load_config()
+    subs = cfg.get("push_subscriptions", [])
+    if endpoint:
+        cfg["push_subscriptions"] = [s for s in subs if s.get("endpoint") != endpoint]
+    else:
+        cfg["push_subscriptions"] = []
+    _save_config(cfg)
+    return jsonify({"ok": True})
+
+
+@app.route("/api/test-push", methods=["POST"])
+@login_required
+def test_push():
+    """Send a test browser push notification only."""
+    cfg = _load_config()
+    subs = cfg.get("push_subscriptions", [])
+    if not subs:
+        return jsonify({"ok": False, "error": "No browser subscriptions found. Enable browser notifications first."}), 400
+    private_key, _ = _ensure_vapid_keys()
+    web_push_cfg = {
+        "enabled": True,
+        "subscriptions": subs,
+        "private_key": private_key,
+    }
+    try:
+        send_web_push(web_push_cfg, "IRCC Tracker \u2014 Test", "Browser push notifications are working!")
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)}), 500
 
 
 @app.route("/settings", methods=["GET", "POST"])
@@ -348,15 +464,25 @@ def test_notification():
     """Send a test notification through all enabled channels."""
     cfg = _load_config()
     notif_settings = cfg.get("notifications", {})
-    try:
-        notify(
-            notif_settings,
-            "IRCC Tracker — Test Notification",
-            "<p>This is a test notification from your IRCC Tracker.</p>",
-        )
-        return jsonify({"ok": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    # Include web push subscriptions in the test
+    notif_settings["web_push"] = {
+        "enabled": bool(cfg.get("push_subscriptions")),
+        "subscriptions": cfg.get("push_subscriptions", []),
+        "private_key": cfg.get("vapid", {}).get("private_key", ""),
+    }
+    results = notify(
+        notif_settings,
+        "IRCC Tracker — Test Notification",
+        "<p>This is a test notification from your IRCC Tracker.</p>",
+    )
+    if not results:
+        return jsonify({"ok": False, "error": "No notification channels are enabled."}), 400
+    failures = {ch: err for ch, err in results.items() if err is not None}
+    if failures:
+        # Build a readable error summary
+        msg = "; ".join(f"{ch}: {err}" for ch, err in failures.items())
+        return jsonify({"ok": False, "error": msg}), 500
+    return jsonify({"ok": True})
 
 
 @app.route("/logout")
@@ -371,4 +497,4 @@ if __name__ == "__main__":
     cfg = _load_config()
     interval = cfg.get("poll_interval", 30)
     start_scheduler(interval)
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    app.run(host="0.0.0.0", port=9001, debug=True)

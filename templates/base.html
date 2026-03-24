@@ -5,192 +5,240 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}IRCC Tracker{% endblock %}</title>
     <meta name="description" content="IRCC Application Status Tracker — Monitor your Canadian immigration applications.">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ─── Reset & Base ──────────────────────────────── */
+        /* ─── Reset ─────────────────────────────────────── */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html { font-size: 16px; scroll-behavior: smooth; }
+
+        /* ─── Base ──────────────────────────────────────── */
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #0a0e27 0%, #1a1040 30%, #0d1b3e 60%, #0a0e27 100%);
-            color: #e0e6f0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f6f8;
+            color: #1e293b;
             min-height: 100vh;
             line-height: 1.6;
         }
-        a { color: #7ea8f8; text-decoration: none; transition: color .2s; }
-        a:hover { color: #aec8ff; }
-
-        /* ─── Animated BG blobs ─────────────────────────── */
-        body::before, body::after {
-            content: '';
-            position: fixed;
-            border-radius: 50%;
-            filter: blur(120px);
-            opacity: .12;
-            pointer-events: none;
-            z-index: 0;
-        }
-        body::before {
-            width: 600px; height: 600px;
-            background: #e63946;
-            top: -100px; left: -150px;
-            animation: blob1 20s ease-in-out infinite;
-        }
-        body::after {
-            width: 500px; height: 500px;
-            background: #457b9d;
-            bottom: -100px; right: -100px;
-            animation: blob2 25s ease-in-out infinite;
-        }
-        @keyframes blob1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(80px,60px)} }
-        @keyframes blob2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-60px,-80px)} }
+        a { color: #b91c1c; text-decoration: none; transition: color .15s; }
+        a:hover { color: #991b1b; }
 
         /* ─── Navbar ────────────────────────────────────── */
         .navbar {
             position: sticky; top: 0; z-index: 100;
             display: flex; align-items: center; justify-content: space-between;
-            padding: 0 2rem; height: 64px;
-            background: rgba(10, 14, 39, .75);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,.06);
+            padding: 0 2rem; height: 56px;
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
         }
         .nav-brand {
-            display: flex; align-items: center; gap: .6rem;
-            font-weight: 700; font-size: 1.1rem; color: #fff;
+            display: flex; align-items: center;
+            padding: .4rem .75rem; border-radius: 6px; transition: all .15s;
+            color: #6b7280;
         }
-        .nav-brand .maple { font-size: 1.3rem; }
-        .nav-links { display: flex; gap: 1.5rem; align-items: center; }
+        .nav-brand:hover { color: #111827; background: #f3f4f6; }
+        .nav-links { display: flex; gap: .25rem; align-items: center; }
         .nav-links a {
-            font-size: .875rem; font-weight: 500; color: #94a3b8;
-            padding: .4rem .8rem; border-radius: 8px; transition: all .2s;
+            font-size: .85rem; font-weight: 500; color: #6b7280;
+            padding: .4rem .75rem; border-radius: 6px; transition: all .15s;
         }
-        .nav-links a:hover, .nav-links a.active { color: #fff; background: rgba(255,255,255,.08); }
+        .nav-links a:hover { color: #111827; background: #f3f4f6; }
+        .nav-links a.active { color: #b91c1c; background: #fef2f2; }
         .nav-links .btn-signout {
-            color: #f87171; border: 1px solid rgba(248,113,113,.3);
+            margin-left: .5rem; color: #b91c1c; font-weight: 600;
         }
-        .nav-links .btn-signout:hover { background: rgba(248,113,113,.12); }
-
-        /* ─── Glass Card ────────────────────────────────── */
-        .glass {
-            background: rgba(255,255,255,.04);
-            backdrop-filter: blur(24px);
-            border: 1px solid rgba(255,255,255,.08);
-            border-radius: 16px;
-            padding: 2rem;
-            position: relative; z-index: 1;
-        }
-        .glass-subtle {
-            background: rgba(255,255,255,.02);
-            border: 1px solid rgba(255,255,255,.05);
-            border-radius: 12px;
-            padding: 1.25rem;
-        }
+        .nav-links .btn-signout:hover { background: #fef2f2; }
 
         /* ─── Layout ────────────────────────────────────── */
         .container {
-            max-width: 1000px;
+            max-width: 960px;
             margin: 0 auto;
             padding: 2rem 1.5rem;
-            position: relative; z-index: 1;
         }
+        .page-header { margin-bottom: 1.75rem; }
         .page-title {
-            font-size: 1.75rem; font-weight: 800; color: #fff;
-            margin-bottom: .4rem;
+            font-size: 1.5rem; font-weight: 700; color: #111827;
+            margin-bottom: .25rem;
         }
-        .page-subtitle { color: #94a3b8; font-size: .925rem; margin-bottom: 2rem; }
+        .page-subtitle { color: #6b7280; font-size: .875rem; }
+
+        /* ─── Cards ─────────────────────────────────────── */
+        .card {
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .card + .card { margin-top: 1rem; }
 
         /* ─── Flashes ───────────────────────────────────── */
-        .flashes { list-style: none; margin-bottom: 1.5rem; }
+        .flashes { list-style: none; margin-bottom: 1.25rem; }
         .flashes li {
-            padding: .8rem 1.2rem;
-            border-radius: 10px;
+            padding: .75rem 1rem;
+            border-radius: 8px;
             margin-bottom: .5rem;
             font-size: .875rem;
             font-weight: 500;
-            animation: fadeIn .3s ease;
         }
-        .flash-error { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: #fca5a5; }
-        .flash-success { background: rgba(34,197,94,.12); border: 1px solid rgba(34,197,94,.25); color: #86efac; }
+        .flash-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .flash-success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+
+        /* ─── Badges ────────────────────────────────────── */
+        .badge {
+            display: inline-flex; align-items: center; gap: .3rem;
+            padding: .2rem .6rem;
+            border-radius: 999px;
+            font-size: .7rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: .03em;
+        }
+        .badge-dot {
+            width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+        }
+        .badge-blue   { background: #eff6ff; color: #1d4ed8; }
+        .badge-blue .badge-dot   { background: #3b82f6; }
+        .badge-green  { background: #f0fdf4; color: #15803d; }
+        .badge-green .badge-dot  { background: #22c55e; }
+        .badge-gray   { background: #f3f4f6; color: #6b7280; }
+        .badge-gray .badge-dot   { background: #9ca3af; }
+        .badge-red    { background: #fef2f2; color: #b91c1c; }
+        .badge-red .badge-dot    { background: #ef4444; }
 
         /* ─── Forms ─────────────────────────────────────── */
-        .form-group { margin-bottom: 1.25rem; }
+        .form-group { margin-bottom: 1rem; }
         .form-label {
             display: block;
-            font-size: .8rem; font-weight: 600; color: #94a3b8;
-            text-transform: uppercase; letter-spacing: .05em;
-            margin-bottom: .4rem;
+            font-size: .8rem; font-weight: 600; color: #374151;
+            margin-bottom: .35rem;
         }
         .form-input {
-            width: 100%; padding: .75rem 1rem;
-            background: rgba(255,255,255,.06);
-            border: 1px solid rgba(255,255,255,.1);
-            border-radius: 10px; color: #fff;
-            font-family: inherit; font-size: .9rem;
-            transition: border-color .2s, box-shadow .2s;
+            width: 100%; padding: .6rem .85rem;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 8px; color: #111827;
+            font-family: inherit; font-size: .875rem;
+            transition: border-color .15s, box-shadow .15s;
             outline: none;
         }
         .form-input:focus {
-            border-color: rgba(126,168,248,.5);
-            box-shadow: 0 0 0 3px rgba(126,168,248,.12);
+            border-color: #b91c1c;
+            box-shadow: 0 0 0 3px rgba(185,28,28,.1);
         }
-        .form-input::placeholder { color: #4b5563; }
+        .form-input::placeholder { color: #9ca3af; }
+        .form-hint { font-size: .75rem; color: #9ca3af; margin-top: .2rem; }
 
         .checkbox-row {
             display: flex; align-items: center; gap: .5rem;
-            font-size: .85rem; color: #94a3b8;
+            font-size: .85rem; color: #6b7280;
         }
         .checkbox-row input[type="checkbox"] {
-            width: 16px; height: 16px; accent-color: #7ea8f8;
+            width: 16px; height: 16px; accent-color: #b91c1c;
         }
 
+        /* ─── Buttons ───────────────────────────────────── */
         .btn {
-            display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
-            padding: .75rem 1.5rem;
-            border-radius: 10px; border: none;
-            font-family: inherit; font-size: .9rem; font-weight: 600;
-            cursor: pointer; transition: all .2s;
+            display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+            padding: .6rem 1.25rem;
+            border-radius: 8px; border: none;
+            font-family: inherit; font-size: .85rem; font-weight: 600;
+            cursor: pointer; transition: all .15s;
         }
         .btn-primary {
-            background: linear-gradient(135deg, #e63946, #c0392b);
-            color: #fff;
-            box-shadow: 0 4px 15px rgba(230,57,70,.3);
+            background: #b91c1c; color: #fff;
         }
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(230,57,70,.4);
-        }
+        .btn-primary:hover { background: #991b1b; }
         .btn-secondary {
-            background: rgba(255,255,255,.06);
-            color: #e0e6f0;
-            border: 1px solid rgba(255,255,255,.1);
+            background: #fff; color: #374151;
+            border: 1px solid #d1d5db;
         }
-        .btn-secondary:hover { background: rgba(255,255,255,.1); }
+        .btn-secondary:hover { background: #f9fafb; border-color: #9ca3af; }
+        .btn-sm {
+            padding: .35rem .75rem; font-size: .78rem;
+        }
+
+        /* ─── Toggle ────────────────────────────────────── */
+        .toggle-row {
+            display: flex; align-items: center; gap: .75rem;
+            margin-bottom: 1rem;
+        }
+        .toggle-row > span { font-size: .85rem; color: #374151; }
+        .toggle {
+            position: relative; width: 40px; height: 22px; flex-shrink: 0;
+        }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-track {
+            position: absolute; cursor: pointer;
+            inset: 0;
+            background: #d1d5db;
+            border-radius: 22px; transition: .2s;
+        }
+        .toggle-track::before {
+            content: '';
+            position: absolute; width: 16px; height: 16px;
+            left: 3px; bottom: 3px;
+            background: #fff;
+            border-radius: 50%; transition: .2s;
+        }
+        .toggle input:checked + .toggle-track { background: #b91c1c; }
+        .toggle input:checked + .toggle-track::before {
+            transform: translateX(18px);
+        }
+
+        /* ─── Track button ──────────────────────────────── */
+        .btn-track {
+            padding: .3rem .7rem;
+            border-radius: 6px; border: 1px solid #d1d5db;
+            background: #fff; color: #6b7280;
+            font-size: .75rem; font-weight: 600; cursor: pointer;
+            transition: all .15s; white-space: nowrap;
+        }
+        .btn-track:hover { border-color: #9ca3af; color: #374151; }
+        .btn-track.tracked {
+            background: #fef2f2;
+            border-color: #fca5a5;
+            color: #b91c1c;
+        }
 
         /* ─── Utility ───────────────────────────────────── */
-        @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        .fade-in { animation: fadeIn .4s ease; }
-
-        /* ─── Responsive ────────────────────────────────── */
-        @media (max-width: 640px) {
+        .text-muted { color: #6b7280; }
+        .text-xs { font-size: .75rem; }
+        .text-sm { font-size: .85rem; }
+        .mt-1 { margin-top: .25rem; }
+        .mt-4 { margin-top: 1rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .gap-2 { gap: .5rem; }
+        .gap-3 { gap: .75rem; }
+        .flex { display: flex; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: .75rem;
+        }
+        @media (max-width: 600px) {
+            .grid-2 { grid-template-columns: 1fr; }
             .navbar { padding: 0 1rem; }
             .container { padding: 1.25rem 1rem; }
-            .glass { padding: 1.25rem; }
         }
 
-        /* ─── Block-specific overrides in child templates ─ */
+        /* ─── Child template overrides ──────────────────── */
         {% block extra_css %}{% endblock %}
     </style>
 </head>
 <body>
     {% if session.get('id_token') %}
     <nav class="navbar">
-        <div class="nav-brand">
-            <span class="maple">🍁</span> IRCC Tracker
+        <a href="{{ url_for('applications') }}" class="nav-brand" style="text-decoration:none;" title="Home">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955a1.126 1.126 0 0 1 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+        </a>
+        <div class="nav-links" style="position:absolute;left:50%;transform:translateX(-50%);">
+            <a href="{{ url_for('applications') }}" class="{% if request.endpoint == 'applications' or request.endpoint == 'application_detail' %}active{% endif %}">Applications</a>
+            <a href="{{ url_for('settings') }}" class="{% if request.endpoint == 'settings' %}active{% endif %}">Settings</a>
         </div>
         <div class="nav-links">
-            <a href="{{ url_for('applications') }}" class="{% if request.endpoint == 'applications' %}active{% endif %}">Applications</a>
-            <a href="{{ url_for('settings') }}" class="{% if request.endpoint == 'settings' %}active{% endif %}">Settings</a>
-            <a href="{{ url_for('logout') }}" class="btn-signout">Sign Out</a>
+            <a href="{{ url_for('logout') }}" class="btn-signout" title="Sign out">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="vertical-align:middle;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m3 0 3-3m0 0-3-3m3 3H9"/></svg>
+            </a>
         </div>
     </nav>
     {% endif %}
@@ -210,5 +258,37 @@
     </div>
 
     {% block scripts %}{% endblock %}
+
+    {% if session.get('id_token') %}
+    <script>
+    (async function initPush() {
+        if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+        if (localStorage.getItem("push_disabled") === "1") return;
+        try {
+            const reg = await navigator.serviceWorker.register("/static/sw.js");
+            await navigator.serviceWorker.ready;
+            const existing = await reg.pushManager.getSubscription();
+            if (existing) return;
+            if (Notification.permission !== "granted") return;
+            const resp = await fetch("/push/vapid-public-key");
+            const { public_key } = await resp.json();
+            const sub = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: _urlB64ToUint8Array(public_key),
+            });
+            await fetch("/push/subscribe", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(sub.toJSON()),
+            });
+        } catch (e) { console.warn("[ircc] push init:", e); }
+    })();
+    function _urlB64ToUint8Array(b64) {
+        const pad = "=".repeat((4 - b64.length % 4) % 4);
+        const b64s = (b64 + pad).replace(/-/g, "+").replace(/_/g, "/");
+        return Uint8Array.from(atob(b64s), c => c.charCodeAt(0));
+    }
+    </script>
+    {% endif %}
 </body>
 </html>

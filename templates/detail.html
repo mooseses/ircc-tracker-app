@@ -2,125 +2,174 @@
 {% block title %}{{ app_info.get('appNumber','') }} — IRCC Tracker{% endblock %}
 
 {% block extra_css %}
-.back-link { font-size: .85rem; color: #64748b; margin-bottom: 1.25rem; display: inline-block; }
-.back-link:hover { color: #94a3b8; }
+.back-link {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-size: .82rem; color: #6b7280; margin-bottom: 1.25rem;
+}
+.back-link:hover { color: #374151; }
 
-/* ─── Header card ── */
+/* Header */
 .detail-header {
     display: flex; justify-content: space-between; align-items: flex-start;
-    flex-wrap: wrap; gap: 1rem; margin-bottom: .8rem;
+    flex-wrap: wrap; gap: .75rem; margin-bottom: .5rem;
 }
-.detail-title { font-size: 1.4rem; font-weight: 800; color: #fff; }
-.detail-meta { color: #94a3b8; font-size: .84rem; margin-bottom: 1.5rem; }
-.detail-meta span { margin-right: 1.5rem; }
+.detail-title { font-size: 1.25rem; font-weight: 700; color: #111827; }
+.detail-actions { display: flex; align-items: center; gap: .5rem; }
+.detail-meta {
+    display: flex; gap: 1.25rem; flex-wrap: wrap;
+    color: #6b7280; font-size: .82rem; margin-bottom: 1.25rem;
+}
+.detail-meta span { display: inline-flex; align-items: center; gap: .25rem; }
 
-/* ─── Activities ── */
-.activities-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1rem; margin-bottom: 2rem;
-}
-.activity-card {
-    display: flex; align-items: center; gap: .75rem;
-    transition: transform .2s;
-}
-.activity-card:hover { transform: translateY(-2px); }
-.activity-icon { font-size: 1.6rem; flex-shrink: 0; }
-.activity-info .act-name {
-    font-size: .82rem; font-weight: 600; color: #94a3b8;
-    text-transform: capitalize; margin-bottom: .15rem;
-}
-.activity-status {
-    display: inline-flex; align-items: center; gap: .3rem;
-    font-size: .78rem; font-weight: 600;
-    padding: .2rem .55rem; border-radius: 6px;
-}
-.activity-status.completed  { background: rgba(34,197,94,.12); color: #86efac; }
-.activity-status.in-progress { background: rgba(59,130,246,.15); color: #93bbfd; }
-.activity-status.not-started { background: rgba(156,163,175,.1); color: #9ca3af; }
-
-/* Pulse animation for in-progress */
-.activity-status.in-progress::before {
-    content: '';
-    width: 6px; height: 6px; border-radius: 50%;
-    background: #3b82f6;
-    animation: blink 1.5s ease-in-out infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
-
-/* ─── Info Grid ── */
+/* Info grid */
 .info-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: .8rem; margin-bottom: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: .75rem;
 }
-.info-item .info-label {
-    font-size: .72rem; font-weight: 600; color: #64748b;
-    text-transform: uppercase; letter-spacing: .05em; margin-bottom: .15rem;
+.info-item {
+    padding: .75rem;
+    background: #f9fafb;
+    border-radius: 8px;
 }
-.info-item .info-value { font-size: .9rem; color: #e0e6f0; }
+.info-label {
+    font-size: .7rem; font-weight: 600; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: .04em; margin-bottom: .15rem;
+}
+.info-value { font-size: .875rem; color: #111827; font-weight: 500; }
 
-/* ─── Timeline ── */
-.section-title {
-    font-size: 1.1rem; font-weight: 700; color: #fff;
-    margin-bottom: 1.25rem;
-    display: flex; align-items: center; gap: .5rem;
+/* Activities */
+.activities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: .75rem;
 }
-.timeline { position: relative; padding-left: 2rem; }
+.activity-card {
+    display: flex; align-items: center; gap: .6rem;
+    padding: .75rem; background: #f9fafb; border-radius: 8px;
+}
+.act-icon {
+    width: 2.25rem; height: 2.25rem; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; background: #e5e7eb;
+    color: #374151;
+}
+.act-icon svg { width: 1.1rem; height: 1.1rem; }
+.act-name {
+    font-size: .8rem; font-weight: 600; color: #374151;
+    text-transform: capitalize; margin-bottom: .1rem;
+}
+.act-status {
+    display: inline-flex; align-items: center; gap: .25rem;
+    font-size: .72rem; font-weight: 600;
+    padding: .15rem .45rem; border-radius: 4px;
+}
+.act-status.completed  { background: #f0fdf4; color: #15803d; }
+.act-status.in-progress { background: #eff6ff; color: #1d4ed8; }
+.act-status.not-started { background: #f3f4f6; color: #6b7280; }
+.act-status.in-progress::before {
+    content: ''; width: 5px; height: 5px; border-radius: 50%;
+    background: #3b82f6;
+    animation: pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Section titles */
+.section-title {
+    font-size: 1rem; font-weight: 700; color: #111827;
+    margin-bottom: 1rem;
+}
+
+/* Timeline */
+.timeline { position: relative; padding-left: 2.5rem; }
 .timeline::before {
     content: ''; position: absolute;
-    left: 7px; top: 0; bottom: 0;
-    width: 2px;
-    background: linear-gradient(to bottom, rgba(230,57,70,.4), rgba(126,168,248,.2), rgba(255,255,255,.05));
+    left: 9px; top: .5rem; bottom: 0;
+    width: 2px; background: linear-gradient(to bottom, #b91c1c 0%, #e5e7eb 6rem, #e5e7eb 100%);
 }
-.tl-item {
-    position: relative;
-    padding-bottom: 1.5rem;
-    animation: fadeIn .4s ease;
-}
+.tl-item { position: relative; padding-bottom: 2rem; }
 .tl-item:last-child { padding-bottom: 0; }
 .tl-dot {
     position: absolute;
-    left: -2rem; top: .3rem;
-    width: 14px; height: 14px;
+    left: -2.5rem; top: .35rem;
+    width: 20px; height: 20px;
     border-radius: 50%;
-    background: #1e293b;
-    border: 2px solid #e63946;
+    background: #fff;
+    border: 2.5px solid #d1d5db;
     z-index: 2;
+    transition: border-color .2s;
 }
-.tl-item:first-child .tl-dot { background: #e63946; box-shadow: 0 0 8px rgba(230,57,70,.5); }
+.tl-item:first-child .tl-dot {
+    background: #b91c1c; border-color: #b91c1c;
+    box-shadow: 0 0 0 4px #fee2e2;
+    width: 22px; height: 22px;
+    left: calc(-2.5rem - 1px);
+}
+.tl-body {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: .85rem 1rem;
+}
+.tl-item:first-child .tl-body {
+    background: #fff7f7;
+    border-color: #fecaca;
+}
 .tl-decoded {
-    font-size: .9rem; font-weight: 600; color: #e0e6f0;
-    margin-bottom: .15rem;
+    font-size: .975rem; font-weight: 600; color: #111827;
+    margin-bottom: .55rem;
+    line-height: 1.4;
 }
-.tl-key { font-size: .75rem; color: #64748b; font-family: monospace; }
-.tl-date { font-size: .78rem; color: #7ea8f8; }
-.tl-loaded { font-size: .72rem; color: #4b5563; }
+.tl-dates {
+    display: flex; gap: 1.5rem; flex-wrap: wrap;
+}
+.tl-date-group {
+    display: flex; flex-direction: column; gap: .1rem;
+}
+.tl-date-label {
+    font-size: .68rem; font-weight: 700; color: #9ca3af;
+    text-transform: uppercase; letter-spacing: .06em;
+}
+.tl-date-value {
+    font-size: .82rem; color: #374151; font-weight: 500;
+}
+.tl-key-badge {
+    display: inline-block; margin-top: .5rem;
+    font-size: .68rem; color: #9ca3af; font-family: monospace;
+    background: #f3f4f6; border-radius: 4px;
+    padding: .1rem .35rem;
+}
 
 .refresh-row {
-    display: flex; justify-content: flex-end; margin-bottom: 1rem;
+    display: flex; justify-content: flex-end; margin-bottom: .75rem;
 }
 {% endblock %}
 
 {% block content %}
-<a href="{{ url_for('applications') }}" class="back-link fade-in">← Back to Applications</a>
+<a href="{{ url_for('applications') }}" class="back-link">&larr; Back to Applications</a>
 
-<div class="glass fade-in" style="margin-bottom: 1.5rem;">
+<div class="card" style="margin-bottom: 1rem;">
     <div class="detail-header">
-        <div>
-            <div class="detail-title">{{ app_info.get('appNumber', 'N/A') }}</div>
+        <div class="detail-title">{{ app_info.get('appNumber', 'N/A') }}</div>
+        <div class="detail-actions">
+            {% set status = app_info.get('status','') %}
+            {% set badge_class = 'badge-blue' if status == 'inProgress' else 'badge-green' if status in ('approved','completed') else 'badge-red' if status == 'refused' else 'badge-gray' %}
+            <span class="badge {{ badge_class }}">
+                <span class="badge-dot"></span>
+                {{ status_labels.get(status, status) }}
+            </span>
+            <button id="track-btn"
+                    class="btn-track {% if is_tracked %}tracked{% endif %}"
+                    onclick="toggleTrack('{{ app_info.get('appNumber','') }}', this)">
+                {% if is_tracked %}Tracking{% else %}Track updates{% endif %}
+            </button>
         </div>
-        <span class="status-badge status-{{ app_info.get('status','') }}">
-            <span class="dot dot-{{ app_info.get('status','') }}"></span>
-            {{ status_labels.get(app_info.get('status',''), app_info.get('status','')) }}
-        </span>
     </div>
-    <p class="detail-meta">
-        <span>📁 {{ lob_map.get(app_info.get('lob',''), app_info.get('lob','')) }}</span>
-        <span>📍 {{ province_map.get(app_info.get('destProv', 0), 'N/A') }}</span>
-        <span>👤 {{ app_info.get('firstName','') }} {{ app_info.get('lastName','') }}</span>
-    </p>
-
+    <div class="detail-meta">
+        <span>{{ lob_map.get(app_info.get('lob',''), app_info.get('lob','')) }}</span>
+        <span>{{ province_map.get(app_info.get('destProv', 0), 'N/A') }}</span>
+        <span>{{ app_info.get('firstName','') }} {{ app_info.get('lastName','') }}</span>
+    </div>
     <div class="info-grid">
         <div class="info-item">
             <div class="info-label">Date Received</div>
@@ -142,15 +191,27 @@
 </div>
 
 <!-- Activities -->
-<div class="glass fade-in" style="margin-bottom: 1.5rem; animation-delay: .1s;">
-    <div class="section-title">📊 Activities</div>
+<div class="card" style="margin-bottom: 1rem;">
+    <div class="section-title">Activities</div>
     <div class="activities-grid">
         {% for act_key, act_val in activities.items() %}
-        <div class="glass-subtle activity-card" style="animation-delay: {{ loop.index0 * 0.06 }}s;">
-            <span class="activity-icon">{{ activity_icons.get(act_key, '📌') }}</span>
-            <div class="activity-info">
+        <div class="activity-card">
+            <span class="act-icon">
+                {% if act_key == 'eligibility' %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25Z"/></svg>
+                {% elif act_key == 'medical' %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v6m3-3H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                {% elif act_key == 'background' %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/></svg>
+                {% elif act_key == 'biometrics' %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0 1 19.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 0 0 4.5 10.5a7.464 7.464 0 0 1-1.15 3.993m1.989 3.559A11.209 11.209 0 0 0 8.25 10.5a3.75 3.75 0 1 1 7.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 0 1-3.6 9.75m6.633-4.596a18.666 18.666 0 0 1-2.485 5.33"/></svg>
+                {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                {% endif %}
+            </span>
+            <div>
                 <div class="act-name">{{ act_key }}</div>
-                <span class="activity-status {{ activity_status_classes.get(act_val, '') }}">
+                <span class="act-status {{ activity_status_classes.get(act_val, '') }}">
                     {{ status_labels.get(act_val, act_val) if act_val in status_labels else act_val.replace('notStarted','Not Started').replace('inProgress','In Progress').replace('completed','Completed') }}
                 </span>
             </div>
@@ -159,24 +220,73 @@
     </div>
 </div>
 
-<!-- History Timeline -->
-<div class="glass fade-in" style="animation-delay: .2s;">
-    <div class="section-title">📜 Application History</div>
+<!-- Status Updates -->
+{% if status_entries %}
+<div class="card" style="margin-bottom: 1rem;">
+    <div class="section-title">Status Updates</div>
+    <div class="activities-grid">
+        {% for se in status_entries %}
+        {% set sc = 'completed' if se.actStatus == 33 else 'in-progress' if se.actStatus == 17 else 'not-started' %}
+        {% set is_security = se.get('key','') == 'Security' %}
+        {% set icon_bg = '#fee2e2' if is_security else '#dcfce7' if sc == 'completed' else '#dbeafe' if sc == 'in-progress' else '#f3f4f6' %}
+        {% set icon_color = '#b91c1c' if is_security else '#15803d' if sc == 'completed' else '#1d4ed8' if sc == 'in-progress' else '#6b7280' %}
+        <div class="activity-card" {% if is_security %}style="background:#fff1f2;border:1px solid #fecaca;"{% endif %}>
+            <span class="act-icon" style="background:{{ icon_bg }};color:{{ icon_color }};">
+                {% if sc == 'completed' %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                {% elif sc == 'in-progress' %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
+                {% else %}
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z"/></svg>
+                {% endif %}
+            </span>
+            <div>
+                <div class="act-name">{{ se.decoded }}</div>
+                <span class="act-status {{ sc }}">{{ se.status_label }}</span>
+                <div style="margin-top:.35rem;display:flex;gap:.3rem;flex-wrap:wrap;align-items:center;">
+                    {% set dc = se.get('dateCreated','') %}
+                    {% if dc %}<span class="tl-key-badge" style="margin-top:0;">{{ dc[:10] }}</span>{% endif %}
+                    <span class="tl-key-badge" style="margin-top:0;">actStatus: {{ se.actStatus }}</span>
+                    <span class="tl-key-badge" style="margin-top:0;">actType: {{ se.actType }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
-    <div class="refresh-row">
-        <button class="btn btn-secondary" id="refresh-btn" onclick="refreshStatus()">
-            🔄 Refresh
-        </button>
+<!-- History -->
+<div class="card">
+    <div class="flex justify-between items-center" style="margin-bottom:1rem;">
+        <div class="section-title" style="margin-bottom:0;">History</div>
+        <button class="btn btn-secondary btn-sm" id="refresh-btn" onclick="refreshStatus()">Refresh</button>
     </div>
 
-    <div class="timeline" id="history-timeline">
+    <div class="timeline">
         {% for entry in history %}
         <div class="tl-item">
             <div class="tl-dot"></div>
-            <div class="tl-decoded">{{ entry.decoded }}</div>
-            <div class="tl-key">Key: {{ entry.get('key','') }}{% if entry.get('actType') %} &middot; actType: {{ entry.actType }}{% endif %}{% if entry.get('actStatus') %} &middot; actStatus: {{ entry.actStatus }}{% endif %}</div>
-            <div class="tl-date">{{ entry.get('dateCreated','')[:10] }}</div>
-            <div class="tl-loaded">Loaded: {{ entry.get('dateLoaded','')[:10] }}</div>
+            <div class="tl-body">
+                <div class="tl-decoded">{{ entry.decoded }}</div>
+                <div class="tl-dates">
+                    <div class="tl-date-group">
+                        <span class="tl-date-label">Event Date</span>
+                        <span class="tl-date-value">
+                            {% set dc = entry.get('dateCreated','') %}
+                            {% if dc %}{{ dc[:10] }}{% if dc|length > 10 %} &nbsp;<span style="color:#9ca3af;font-size:.78rem;">{{ dc[11:16] }}</span>{% endif %}{% else %}—{% endif %}
+                        </span>
+                    </div>
+                    <div class="tl-date-group">
+                        <span class="tl-date-label">Tracker Detected</span>
+                        <span class="tl-date-value">
+                            {% set dl = entry.get('dateLoaded','') %}
+                            {% if dl %}{{ dl[:10] }}{% if dl|length > 10 %} &nbsp;<span style="color:#9ca3af;font-size:.78rem;">{{ dl[11:16] }}</span>{% endif %}{% else %}—{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <span class="tl-key-badge">{{ entry.get('key','') }}</span>
+            </div>
         </div>
         {% endfor %}
     </div>
@@ -185,16 +295,26 @@
 
 {% block scripts %}
 <script>
+async function toggleTrack(appNum, btn) {
+    btn.disabled = true;
+    try {
+        const resp = await fetch(`/application/${appNum}/track`, { method: "POST" });
+        const data = await resp.json();
+        btn.textContent = data.tracking ? "Tracking" : "Track updates";
+        btn.classList.toggle("tracked", data.tracking);
+    } catch (e) { console.error(e); }
+    btn.disabled = false;
+}
 async function refreshStatus() {
     const btn = document.getElementById('refresh-btn');
-    btn.textContent = '⏳ Loading...';
+    btn.textContent = 'Loading\u2026';
     btn.disabled = true;
     try {
         const resp = await fetch('/api/status/{{ app_info.get("appNumber","") }}');
         if (resp.ok) { location.reload(); }
         else { alert('Failed to refresh. Session may have expired.'); }
     } catch(e) { alert('Network error.'); }
-    btn.textContent = '🔄 Refresh';
+    btn.textContent = 'Refresh';
     btn.disabled = false;
 }
 </script>

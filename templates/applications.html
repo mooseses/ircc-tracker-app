@@ -2,78 +2,120 @@
 {% block title %}Applications — IRCC Tracker{% endblock %}
 
 {% block extra_css %}
+/* Card grid */
 .app-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 1rem;
 }
 .app-card {
-    cursor: pointer;
-    transition: transform .2s, box-shadow .2s, border-color .2s;
+    position: relative;
+    display: flex; flex-direction: column;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color .15s, box-shadow .15s;
 }
 .app-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0,0,0,.25);
-    border-color: rgba(126,168,248,.25);
+    border-color: #d1d5db;
+    box-shadow: 0 2px 8px rgba(0,0,0,.07);
 }
-.app-card .card-header {
-    display: flex; justify-content: space-between; align-items: flex-start;
-    margin-bottom: 1rem;
-}
-.app-number {
-    font-size: 1rem; font-weight: 700; color: #fff;
-    font-family: 'SF Mono', 'Fira Code', monospace;
-}
-.status-badge {
+
+/* "Updated today" ribbon */
+.today-indicator {
+    position: absolute; top: .75rem; right: .75rem;
     display: inline-flex; align-items: center; gap: .3rem;
-    padding: .25rem .7rem;
-    border-radius: 20px;
-    font-size: .72rem; font-weight: 600;
+    font-size: .68rem; font-weight: 700; color: #b91c1c;
+    background: #fef2f2; border: 1px solid #fecaca;
+    border-radius: 6px; padding: .2rem .5rem;
+    letter-spacing: .02em; text-transform: uppercase;
+}
+.today-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: #b91c1c;
+    animation: today-pulse 1.6s ease-in-out infinite;
+}
+@keyframes today-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* Card header */
+.app-card-header {
+    padding: 1.25rem 1.25rem .75rem;
+}
+.app-card-number {
+    font-size: 1rem; font-weight: 700; color: #111827;
+    font-variant-numeric: tabular-nums;
+    margin-bottom: .25rem;
+}
+.app-card-type {
+    font-size: .82rem; color: #6b7280;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Card body — info chips */
+.app-card-body {
+    padding: 0 1.25rem .75rem;
+    display: flex; flex-wrap: wrap; gap: .5rem;
+}
+.app-chip {
+    display: flex; flex-direction: column;
+    background: #f9fafb; border-radius: 8px;
+    padding: .45rem .65rem;
+    min-width: 0;
+}
+.app-chip-label {
+    font-size: .65rem; font-weight: 600; color: #9ca3af;
     text-transform: uppercase; letter-spacing: .04em;
 }
-.status-inProgress { background: rgba(59,130,246,.18); color: #93bbfd; border: 1px solid rgba(59,130,246,.25); }
-.status-approved   { background: rgba(34,197,94,.15);  color: #86efac; border: 1px solid rgba(34,197,94,.25); }
-.status-completed  { background: rgba(34,197,94,.15);  color: #86efac; border: 1px solid rgba(34,197,94,.25); }
-.status-closed     { background: rgba(156,163,175,.12);color: #9ca3af; border: 1px solid rgba(156,163,175,.2);}
-.status-refused    { background: rgba(239,68,68,.15);  color: #fca5a5; border: 1px solid rgba(239,68,68,.25); }
-.status-withdrawn  { background: rgba(156,163,175,.12);color: #9ca3af; border: 1px solid rgba(156,163,175,.2);}
+.app-chip-value {
+    font-size: .82rem; font-weight: 500; color: #374151;
+    white-space: nowrap;
+}
 
-.dot { width: 6px; height: 6px; border-radius: 50%; }
-.dot-inProgress { background: #3b82f6; box-shadow: 0 0 6px #3b82f6; }
-.dot-approved   { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
-.dot-completed  { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
-.dot-closed     { background: #9ca3af; }
-.dot-refused    { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
-.dot-withdrawn  { background: #9ca3af; }
+/* Card footer */
+.app-card-footer {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .75rem 1.25rem;
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
+    gap: .5rem;
+}
+.app-card-footer-left {
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+}
 
-.card-meta { display: flex; flex-direction: column; gap: .4rem; }
-.meta-row {
-    display: flex; justify-content: space-between;
-    font-size: .82rem; color: #94a3b8;
+/* Open button — prominent on mobile */
+.btn-open {
+    display: inline-flex; align-items: center; gap: .35rem;
+    background: #b91c1c; color: #fff;
+    font-size: .78rem; font-weight: 600;
+    padding: .45rem .85rem; border-radius: 8px;
+    border: none; cursor: pointer; text-decoration: none;
+    transition: background .15s;
+    white-space: nowrap;
 }
-.meta-row .label { color: #64748b; }
-.card-applicant {
-    margin-top: 1rem; padding-top: 1rem;
-    border-top: 1px solid rgba(255,255,255,.06);
-    display: flex; align-items: center; gap: .6rem;
-    font-size: .85rem; color: #cbd5e1;
-}
-.avatar {
-    width: 32px; height: 32px; border-radius: 50%;
-    background: linear-gradient(135deg, #e63946, #c0392b);
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 700; font-size: .75rem; color: #fff;
-    flex-shrink: 0;
-}
+.btn-open:hover { background: #991b1b; }
+.btn-open svg { width: .85rem; height: .85rem; flex-shrink: 0; }
+
 .empty-state {
-    text-align: center; padding: 4rem 2rem; color: #64748b;
+    text-align: center; padding: 4rem 2rem; color: #9ca3af;
 }
-.empty-state .icon { font-size: 3rem; margin-bottom: 1rem; }
+.empty-icon {
+    display: flex; align-items: center; justify-content: center;
+    width: 3.5rem; height: 3.5rem; margin: 0 auto .75rem;
+    background: #f3f4f6; border-radius: 12px; color: #9ca3af;
+}
+.empty-icon svg { width: 1.5rem; height: 1.5rem; }
+
+@media (max-width: 640px) {
+    .app-grid { grid-template-columns: 1fr; }
+}
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title fade-in">Your Applications</h1>
-<p class="page-subtitle fade-in">Select an application to view its detailed status and history.</p>
+<div class="page-header">
+    <h1 class="page-title">Applications</h1>
+    <p class="page-subtitle">Select an application to view details. Toggle tracking to receive update notifications.</p>
+</div>
 
 {% if apps %}
 <div class="app-grid">
@@ -83,42 +125,78 @@
     {% set app_type = app.get('appType', app.get('lob', '')) %}
     {% set first_name = app.get('paFirstName', app.get('firstName', '')) %}
     {% set last_name = app.get('paLastName', app.get('lastName', '')) %}
-    <a href="{{ url_for('application_detail', app_number=app_num) }}"
-       class="glass app-card fade-in" style="animation-delay: {{ loop.index0 * 0.08 }}s; text-decoration:none; color:inherit;">
-        <div class="card-header">
-            <span class="app-number">{{ app_num }}</span>
-            <span class="status-badge status-{{ status }}">
-                <span class="dot dot-{{ status }}"></span>
-                {{ status_labels.get(status, status) }}
-            </span>
-        </div>
-        <div class="card-meta">
-            <div class="meta-row">
-                <span class="label">Type</span>
-                <span>{{ lob_map.get(app_type, app_type) }}</span>
-            </div>
-            <div class="meta-row">
-                <span class="label">Tasks</span>
-                <span>{{ app.get('tasks', 0) }} task(s)</span>
-            </div>
-            <div class="meta-row">
-                <span class="label">Last Updated</span>
-                <span>{{ app.get('lastUpdated', 'N/A')[:10] }}</span>
-            </div>
-        </div>
-        {% if first_name %}
-        <div class="card-applicant">
-            <div class="avatar">{{ first_name[0] }}{{ last_name[0] if last_name else '' }}</div>
-            <span>{{ first_name }} {{ last_name }}</span>
-        </div>
+    {% set last_updated = app.get('lastUpdated', '') %}
+    {% set updated_today = last_updated[:10] == today %}
+    {% set badge_class = 'badge-blue' if status == 'inProgress' else 'badge-green' if status in ('approved','completed') else 'badge-red' if status == 'refused' else 'badge-gray' %}
+
+    <div class="app-card">
+        {% if updated_today %}
+        <div class="today-indicator"><span class="today-dot"></span> Updated today</div>
         {% endif %}
-    </a>
+
+        <div class="app-card-header">
+            <div class="app-card-number">{{ app_num }}</div>
+            <div class="app-card-type">{{ lob_map.get(app_type, app_type) }}</div>
+        </div>
+
+        <div class="app-card-body">
+            {% if first_name %}
+            <div class="app-chip">
+                <span class="app-chip-label">Applicant</span>
+                <span class="app-chip-value">{{ first_name }} {{ last_name }}</span>
+            </div>
+            {% endif %}
+            <div class="app-chip">
+                <span class="app-chip-label">Last Updated</span>
+                <span class="app-chip-value">{{ last_updated[:10] if last_updated else 'N/A' }}</span>
+            </div>
+        </div>
+
+        <div class="app-card-footer">
+            <div class="app-card-footer-left">
+                <span class="badge {{ badge_class }}">
+                    <span class="badge-dot"></span>
+                    {{ status_labels.get(status, status) }}
+                </span>
+                <button class="btn-track {% if app_num in tracked_app_nums %}tracked{% endif %}"
+                        onclick="event.stopPropagation();toggleTrack('{{ app_num }}', this)">
+                    {% if app_num in tracked_app_nums %}Tracking{% else %}Track{% endif %}
+                </button>
+            </div>
+            <a href="{{ url_for('application_detail', app_number=app_num) }}" class="btn-open">
+                Open
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3"/></svg>
+            </a>
+        </div>
+    </div>
     {% endfor %}
 </div>
 {% else %}
-<div class="glass empty-state fade-in">
-    <div class="icon">📭</div>
+<div class="card empty-state">
+    <div class="empty-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 9v.906a2.25 2.25 0 0 1-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 0 0 1.183 1.981l6.478 3.488m8.839 2.51-4.66-2.51m0 0-1.023-.55a2.25 2.25 0 0 0-2.134 0l-1.022.55m0 0-4.661 2.51m16.5-1.875a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg>
+    </div>
     <p>No applications found on this account.</p>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function toggleTrack(appNum, btn) {
+    btn.disabled = true;
+    try {
+        const resp = await fetch(`/application/${appNum}/track`, { method: "POST" });
+        const data = await resp.json();
+        if (data.tracking) {
+            btn.textContent = "Tracking";
+            btn.classList.add("tracked");
+        } else {
+            btn.textContent = "Track";
+            btn.classList.remove("tracked");
+        }
+    } catch (e) { console.error(e); }
+    btn.disabled = false;
+}
+</script>
 {% endblock %}

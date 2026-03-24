@@ -38,6 +38,23 @@ def authenticate(username: str, password: str) -> dict:
     return resp.json()["AuthenticationResult"]
 
 
+def refresh_id_token(refresh_token: str) -> dict:
+    """Use a Cognito refresh token to obtain a fresh IdToken without re-entering credentials."""
+    headers = {
+        "Content-Type": "application/x-amz-json-1.1",
+        "X-Amz-Target": "AWSCognitoIdentityProviderService.InitiateAuth",
+    }
+    payload = {
+        "AuthFlow": "REFRESH_TOKEN_AUTH",
+        "ClientId": CLIENT_ID,
+        "AuthParameters": {"REFRESH_TOKEN": refresh_token},
+    }
+    resp = requests.post(COGNITO_URL, headers=headers, json=payload, timeout=30)
+    if resp.status_code != 200:
+        raise RuntimeError(f"Token refresh failed ({resp.status_code}): {resp.text}")
+    return resp.json()["AuthenticationResult"]
+
+
 # ─── API Calls ────────────────────────────────────────────────────────────────
 
 def _api_headers(id_token: str) -> dict:
@@ -104,25 +121,26 @@ def fetch_application_detail(id_token: str, app_number: str, uci: str) -> dict:
 
 
 def fetch_history_map() -> dict:
-    """Fetch corr-history-map.json from the IRCC CDN (fresh every call)."""
-    try:
-        resp = requests.get(HISTORY_MAP_URL, timeout=15, verify=False)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception:
-        pass
-    # Fallback hardcoded map in case the CDN is unreachable
-    return {
+    """Fetch corr-history-map.json from the IRCC CDN and merge with hardcoded base.
+
+    The CDN map is authoritative but incomplete — it omits several numeric keys
+    that the API does return (e.g. "70", "86", "89", "709", "959", "960", "1290",
+    "1319"). We always start from the full hardcoded base and overlay CDN data on
+    top so that all known keys are covered regardless of CDN availability.
+    """
+    base = {
+        # Numeric codes
         "28": "BIRTH_CERT", "29": "DIVORCE_CERT", "31": "CUSTODY",
         "41": "PASSPORT", "42": "PASSPORT_PHOTO", "54": "MED_PROOF",
         "57": "POLICE_CERT", "61": "FAMILY_INFO", "63": "USE_OF_REP",
-        "65": "GEN_APPL_FORM", "70": "CORRESPONDENCE", "86": "PHOTO",
+        "65": "GEN_APPL_FORM", "70": "INFO_RECEIVED", "86": "PHOTO",
         "89": "TRAVEL_DOC", "96": "WITHDRAWAL", "437": "ADD_FEES",
         "602": "SPR_INFO", "609": "SPR_UNDERTAKING", "651": "RELATIONSHIP",
         "664": "PAYMENT", "667": "MARRIAGE_CERT", "709": "SCHEDULE_A",
         "723": "ADD_FAMILY_INFO", "871": "POLICE_CERT", "873": "PASSPORT",
         "959": "APPLICATION_RECEIVED", "960": "FEES_RECEIVED",
         "1021": "ENQUIRY", "1290": "APPLICATION_TRANSFER", "1319": "IMM_DOCS",
+        # Letter / e-mail codes
         "Word LTR 01": "AOR", "Auto E-mail 01": "AOR",
         "Auto E-mail 20": "COPR_ISSUED",
         "Auto E-mail 111": "BIOMETRICS", "IMM5756": "BIOMETRIC_FEES",
@@ -135,54 +153,73 @@ def fetch_history_map() -> dict:
         "Word LTR 19": "TRANSFERRED", "Word LTR 12": "WITHDRAWN",
         "INITIAL": "INITIAL", "Medical": "MEDICAL_UPDATE",
     }
+    try:
+        resp = requests.get(HISTORY_MAP_URL, timeout=15, verify=False)
+        if resp.status_code == 200:
+            base.update(resp.json())
+    except Exception:
+        pass
+    # Apply corrections for known CDN mapping errors
+    # "Auto E-mail 20" is a generic correspondence email, NOT COPR
+    base["Auto E-mail 20"] = "CORRESPONDENCE"
+    return base
 
 
 # ─── Human-Readable Labels ───────────────────────────────────────────────────
 
 HUMAN_LABELS = {
+    # Application milestones
     "INITIAL": "Application Received",
     "APPLICATION_RECEIVED": "Application Received",
     "AOR": "Acknowledgement of Receipt",
-    "BIOMETRICS": "Biometrics Request",
-    "BIOMETRIC_FEES": "Biometric Fees",
-    "MEDICAL_UPDATE": "Medical Update",
-    "MED_PROOF": "Medical Proof",
-    "MED_REPORT": "Medical Report",
-    "MED_ADD": "Medical Additional Info",
-    "MED_RESULT": "Medical Result",
-    "ENQUIRY": "Enquiry",
-    "BIRTH_CERT": "Birth Certificate",
-    "DIVORCE_CERT": "Divorce Certificate",
-    "CUSTODY": "Custody Document",
-    "PASSPORT": "Passport",
-    "PASSPORT_PHOTO": "Passport Photo",
-    "POLICE_CERT": "Police Certificate",
-    "FAMILY_INFO": "Family Information",
-    "USE_OF_REP": "Use of Representative",
-    "GEN_APPL_FORM": "General Application Form",
-    "WITHDRAWAL": "Withdrawal",
-    "ADD_FEES": "Additional Fees",
-    "SPR_INFO": "Sponsor Information",
-    "SPR_UNDERTAKING": "Sponsor Undertaking",
-    "SPR_DEC": "Sponsor Decision",
-    "RELATIONSHIP": "Relationship Document",
-    "PAYMENT": "Payment Received",
-    "MARRIAGE_CERT": "Marriage Certificate",
-    "ADD_FAMILY_INFO": "Additional Family Information",
-    "COPR_ISSUED": "COPR Issued",
-    "ELIG_DEC": "Eligibility Decision",
-    "PREARRIVAL": "Pre-Arrival Services",
-    "PR_AUTH": "PR Authorization",
-    "REFUND_FEES": "Fee Refund",
-    "TRANSFERRED": "File Transferred",
-    "WITHDRAWN": "Application Withdrawn",
-    "CORRESPONDENCE": "Correspondence",
-    "PHOTO": "Photograph",
-    "TRAVEL_DOC": "Travel Document",
-    "SCHEDULE_A": "Schedule A",
     "FEES_RECEIVED": "Fees Received",
+    "COPR_ISSUED": "Confirmation of Permanent Residence (COPR) Issued",
+    "ELIG_DEC": "Eligibility Decision",
+    "PR_AUTH": "Permanent Resident Travel Authorization",
+    "TRANSFERRED": "Application Transferred",
+    "REFUND_FEES": "Fee Refund Issued",
+    "WITHDRAWN": "Application Withdrawn",
+    "WITHDRAWAL": "Application Withdrawal Requested",
     "APPLICATION_TRANSFER": "Application Transfer",
-    "IMM_DOCS": "Immigration Documents",
+    # Action required
+    "BIOMETRICS": "Complete Your Biometrics",
+    "BIOMETRIC_FEES": "Biometric Fee Payment Required",
+    "ADD_FEES": "Additional Fees Required",
+    # Medical
+    "MEDICAL_UPDATE": "Medical Exam",
+    "MED_PROOF": "Medical Proof Received",
+    "MED_REPORT": "Medical Report Received",
+    "MED_ADD": "Additional Medical Information Requested",
+    "MED_RESULT": "Medical Result Received",
+    # Enquiries & correspondence
+    "ENQUIRY": "We received your enquiry",
+    "INFO_RECEIVED": "We received the information you sent us",
+    "CORRESPONDENCE": "Message About Your Application",
+    "IMM_DOCS": "Immigration Documents Received",
+    # Documents received
+    "BIRTH_CERT": "Birth Registration/Certificate Received",
+    "DIVORCE_CERT": "Divorce Certificate Received",
+    "CUSTODY": "Custody Document Received",
+    "PASSPORT": "Passport/Travel Document Received",
+    "PASSPORT_PHOTO": "Passport Photo Received",
+    "TRAVEL_DOC": "Travel Document Received",
+    "PHOTO": "Photograph Received",
+    "POLICE_CERT": "Police Certificate Received",
+    "MARRIAGE_CERT": "Marriage Certificate Received",
+    "FAMILY_INFO": "Family Information Form Received",
+    "ADD_FAMILY_INFO": "Additional Family Information (IMM 5406) Received",
+    "USE_OF_REP": "Use of Representative Form Received",
+    "GEN_APPL_FORM": "Generic Application Form for Canada (IMM 0008) Received",
+    "SCHEDULE_A": "Schedule A Received",
+    "RELATIONSHIP": "Relationship Document Received",
+    "PAYMENT": "Payment Received",
+    # Sponsorship
+    "SPR_INFO": "Sponsor Information Received",
+    "SPR_UNDERTAKING": "Sponsor Undertaking Received",
+    "SPR_DEC": "Sponsorship Decision",
+    # Other
+    "PREARRIVAL": "Pre-Arrival Services",
+    "Security": "Security Screening",
 }
 
 

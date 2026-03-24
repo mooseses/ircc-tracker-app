@@ -2,55 +2,21 @@
 {% block title %}Settings — IRCC Tracker{% endblock %}
 
 {% block extra_css %}
-.settings-section {
-    margin-bottom: 1.5rem;
-}
-.settings-section .section-header {
-    display: flex; align-items: center; gap: .6rem;
+.section-title {
+    font-size: .95rem; font-weight: 700; color: #111827;
     margin-bottom: 1rem;
+    display: flex; align-items: center; gap: .5rem;
 }
-.settings-section .section-header h2 {
-    font-size: 1rem; font-weight: 700; color: #fff;
+.section-title .icon {
+    width: 28px; height: 28px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 6px; font-size: .85rem;
 }
-.settings-section .section-header .icon { font-size: 1.2rem; }
-
-.grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .8rem;
-}
-@media (max-width: 600px) { .grid-2 { grid-template-columns: 1fr; } }
-
-.toggle-row {
-    display: flex; align-items: center; gap: .75rem;
-    margin-bottom: 1rem;
-    padding: .6rem .8rem;
-    border-radius: 8px;
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.05);
-}
-.toggle-row label { font-size: .85rem; color: #cbd5e1; cursor: pointer; }
-.toggle-switch {
-    position: relative; width: 40px; height: 22px; flex-shrink: 0;
-}
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider {
-    position: absolute; cursor: pointer;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(255,255,255,.1);
-    border-radius: 22px; transition: .3s;
-}
-.toggle-slider::before {
-    content: '';
-    position: absolute; width: 16px; height: 16px;
-    left: 3px; bottom: 3px;
-    background: #9ca3af;
-    border-radius: 50%; transition: .3s;
-}
-.toggle-switch input:checked + .toggle-slider { background: rgba(230,57,70,.5); }
-.toggle-switch input:checked + .toggle-slider::before {
-    transform: translateX(18px); background: #e63946;
-}
+.icon-purple { background: #f3e8ff; }
+.icon-blue   { background: #eff6ff; }
+.icon-green  { background: #f0fdf4; }
+.icon-amber  { background: #fffbeb; }
+.icon-rose   { background: #fff1f2; }
 
 .btn-row {
     display: flex; gap: .75rem; align-items: center;
@@ -59,18 +25,20 @@
 {% endblock %}
 
 {% block content %}
-<h1 class="page-title fade-in">Settings</h1>
-<p class="page-subtitle fade-in">Configure polling interval and notification channels.</p>
+<div class="page-header">
+    <h1 class="page-title">Settings</h1>
+    <p class="page-subtitle">Configure polling interval and notification channels.</p>
+</div>
 
 <form method="POST" action="{{ url_for('settings') }}">
 
     <!-- Polling -->
-    <div class="glass settings-section fade-in">
-        <div class="section-header">
-            <span class="icon">⏱️</span>
-            <h2>Polling Interval</h2>
+    <div class="card">
+        <div class="section-title">
+            <span class="icon icon-purple"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="#7c3aed"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg></span>
+            Polling Interval
         </div>
-        <div class="form-group" style="max-width:300px;">
+        <div class="form-group" style="max-width:280px;margin-bottom:0;">
             <label class="form-label" for="poll_interval">Check every (minutes)</label>
             <input class="form-input" type="number" id="poll_interval" name="poll_interval"
                    value="{{ cfg.get('poll_interval', 30) }}" min="5" max="1440">
@@ -78,18 +46,18 @@
     </div>
 
     <!-- Email -->
-    <div class="glass settings-section fade-in" style="animation-delay:.06s">
-        <div class="section-header">
-            <span class="icon">📧</span>
-            <h2>Email (SMTP)</h2>
+    <div class="card">
+        <div class="section-title">
+            <span class="icon icon-blue"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="#2563eb"><path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"/></svg></span>
+            Email (SMTP)
         </div>
         <div class="toggle-row">
-            <label class="toggle-switch">
+            <label class="toggle">
                 <input type="checkbox" name="email_enabled"
                        {% if cfg.get('notifications',{}).get('email',{}).get('enabled') %}checked{% endif %}>
-                <span class="toggle-slider"></span>
+                <span class="toggle-track"></span>
             </label>
-            <label>Enable email notifications</label>
+            <span>Enable email notifications</span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -126,20 +94,20 @@
     </div>
 
     <!-- Slack -->
-    <div class="glass settings-section fade-in" style="animation-delay:.12s">
-        <div class="section-header">
-            <span class="icon">💬</span>
-            <h2>Slack</h2>
+    <div class="card">
+        <div class="section-title">
+            <span class="icon icon-amber"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="#d97706"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"/></svg></span>
+            Slack
         </div>
         <div class="toggle-row">
-            <label class="toggle-switch">
+            <label class="toggle">
                 <input type="checkbox" name="slack_enabled"
                        {% if cfg.get('notifications',{}).get('slack',{}).get('enabled') %}checked{% endif %}>
-                <span class="toggle-slider"></span>
+                <span class="toggle-track"></span>
             </label>
-            <label>Enable Slack notifications</label>
+            <span>Enable Slack notifications</span>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom:0;">
             <label class="form-label">Incoming Webhook URL</label>
             <input class="form-input" name="slack_webhook" placeholder="https://hooks.slack.com/services/..."
                    value="{{ cfg.get('notifications',{}).get('slack',{}).get('webhook_url','') }}">
@@ -147,18 +115,18 @@
     </div>
 
     <!-- Telegram -->
-    <div class="glass settings-section fade-in" style="animation-delay:.18s">
-        <div class="section-header">
-            <span class="icon">✈️</span>
-            <h2>Telegram</h2>
+    <div class="card">
+        <div class="section-title">
+            <span class="icon icon-green"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="#16a34a"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg></span>
+            Telegram
         </div>
         <div class="toggle-row">
-            <label class="toggle-switch">
+            <label class="toggle">
                 <input type="checkbox" name="telegram_enabled"
                        {% if cfg.get('notifications',{}).get('telegram',{}).get('enabled') %}checked{% endif %}>
-                <span class="toggle-slider"></span>
+                <span class="toggle-track"></span>
             </label>
-            <label>Enable Telegram notifications</label>
+            <span>Enable Telegram notifications</span>
         </div>
         <div class="grid-2">
             <div class="form-group">
@@ -175,40 +143,62 @@
     </div>
 
     <!-- Webhook -->
-    <div class="glass settings-section fade-in" style="animation-delay:.24s">
-        <div class="section-header">
-            <span class="icon">🔗</span>
-            <h2>Custom Webhook</h2>
+    <div class="card">
+        <div class="section-title">
+            <span class="icon icon-rose"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="#e11d48"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 0 0-5.656 0l-4 4a4 4 0 1 0 5.656 5.656l1.102-1.101m-.758-4.899a4 4 0 0 0 5.656 0l4-4a4 4 0 0 0-5.656-5.656l-1.1 1.1"/></svg></span>
+            Custom Webhook
         </div>
         <div class="toggle-row">
-            <label class="toggle-switch">
+            <label class="toggle">
                 <input type="checkbox" name="webhook_enabled"
                        {% if cfg.get('notifications',{}).get('webhook',{}).get('enabled') %}checked{% endif %}>
-                <span class="toggle-slider"></span>
+                <span class="toggle-track"></span>
             </label>
-            <label>Enable webhook notifications</label>
+            <span>Enable webhook notifications</span>
         </div>
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom:0;">
             <label class="form-label">Webhook URL</label>
             <input class="form-input" name="webhook_url" placeholder="https://example.com/webhook"
                    value="{{ cfg.get('notifications',{}).get('webhook',{}).get('url','') }}">
         </div>
     </div>
 
-    <div class="btn-row fade-in" style="animation-delay:.3s">
-        <button class="btn btn-primary" type="submit">💾 Save Settings</button>
+    <div class="btn-row">
+        <button class="btn btn-primary" type="submit">Save Settings</button>
         <button class="btn btn-secondary" type="button" id="test-notify-btn" onclick="testNotify()">
-            🔔 Send Test Notification
+            Send Test Notification
         </button>
     </div>
 </form>
+
+<!-- Browser Push -->
+<div class="card" style="margin-top:1rem;" id="push-card">
+    <div class="section-title">
+        <span class="icon icon-purple"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke-width="1.75" stroke="#7c3aed"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0"/></svg></span>
+        Browser Push Notifications
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+        <div>
+            <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem;">
+                <span class="form-label" style="margin:0;">Status</span>
+                <span id="push-badge" class="badge badge-gray"><span class="badge-dot"></span> Checking...</span>
+            </div>
+            <p class="text-muted text-xs" id="push-hint">Loading...</p>
+        </div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" id="push-enable-btn" onclick="pushEnable()" style="display:none;">Enable</button>
+            <button class="btn btn-secondary btn-sm" id="push-disable-btn" onclick="pushDisable()" style="display:none;">Disable</button>
+            <button class="btn btn-secondary btn-sm" id="push-test-btn" onclick="pushTest()" style="display:none;">Send Test Push</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 async function testNotify() {
     const btn = document.getElementById('test-notify-btn');
-    btn.textContent = '⏳ Sending...';
+    btn.textContent = 'Sending\u2026';
     btn.disabled = true;
     try {
         const resp = await fetch('/api/test-notification', {method: 'POST'});
@@ -216,8 +206,133 @@ async function testNotify() {
         if (data.ok) { alert('Test notification sent!'); }
         else { alert('Error: ' + (data.error || 'Unknown')); }
     } catch(e) { alert('Network error.'); }
-    btn.textContent = '🔔 Send Test Notification';
+    btn.textContent = 'Send Test Notification';
     btn.disabled = false;
 }
+
+// ── Browser Push UI ───────────────────────────────────────────────
+const badge    = document.getElementById('push-badge');
+const hint     = document.getElementById('push-hint');
+const enableBtn  = document.getElementById('push-enable-btn');
+const disableBtn = document.getElementById('push-disable-btn');
+const testBtn    = document.getElementById('push-test-btn');
+
+function _urlB64(b64) {
+    const pad = '='.repeat((4 - b64.length % 4) % 4);
+    const b = (b64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+    return Uint8Array.from(atob(b), c => c.charCodeAt(0));
+}
+
+function setPushState(state) {
+    // state: 'subscribed' | 'unsubscribed' | 'blocked' | 'unsupported'
+    enableBtn.style.display  = 'none';
+    disableBtn.style.display = 'none';
+    testBtn.style.display    = 'none';
+    badge.className = 'badge badge-gray';
+    badge.innerHTML = '<span class="badge-dot"></span> —';
+
+    if (state === 'unsupported') {
+        badge.innerHTML = '<span class="badge-dot"></span> Not supported';
+        hint.textContent = 'Your browser does not support push notifications.';
+    } else if (state === 'blocked') {
+        badge.className = 'badge badge-red';
+        badge.innerHTML = '<span class="badge-dot"></span> Blocked';
+        hint.textContent = 'Notifications are blocked. Allow them in your browser\u2019s site settings, then refresh.';
+    } else if (state === 'subscribed') {
+        badge.className = 'badge badge-green';
+        badge.innerHTML = '<span class="badge-dot"></span> Active';
+        hint.textContent = 'Your browser is subscribed and will receive push notifications.';
+        disableBtn.style.display = 'block';
+        testBtn.style.display    = 'block';
+    } else {
+        badge.className = 'badge badge-gray';
+        badge.innerHTML = '<span class="badge-dot"></span> Off';
+        hint.textContent = 'Click Enable to subscribe this browser to push notifications.';
+        enableBtn.style.display = 'block';
+    }
+}
+
+async function checkPushState() {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+        setPushState('unsupported'); return;
+    }
+    if (Notification.permission === 'denied') {
+        setPushState('blocked'); return;
+    }
+    try {
+        // Use getRegistration (no side-effects) to check existing subscription
+        const reg = await navigator.serviceWorker.getRegistration('/static/sw.js');
+        if (!reg) { setPushState('unsubscribed'); return; }
+        const sub = await reg.pushManager.getSubscription();
+        setPushState(sub ? 'subscribed' : 'unsubscribed');
+    } catch(e) {
+        console.warn('[ircc] checkPushState error:', e);
+        setPushState('unsubscribed');
+    }
+}
+
+async function pushEnable() {
+    enableBtn.disabled = true;
+    enableBtn.textContent = 'Enabling\u2026';
+    try {
+        const perm = await Notification.requestPermission();
+        if (perm !== 'granted') { enableBtn.disabled = false; enableBtn.textContent = 'Enable'; setPushState('blocked'); return; }
+        localStorage.removeItem('push_disabled');
+
+        const reg = await navigator.serviceWorker.register('/static/sw.js');
+
+        // Wait for the SW on this registration to become active without relying
+        // on the global navigator.serviceWorker.ready (which hangs in Firefox
+        // until the SW controls the page, which only happens on next load).
+        await new Promise((resolve, reject) => {
+            const sw = reg.installing || reg.waiting || reg.active;
+            if (!sw || sw.state === 'activated') { resolve(); return; }
+            const timeout = setTimeout(() => reject(new Error('Service worker activation timed out')), 8000);
+            sw.addEventListener('statechange', function() {
+                if (this.state === 'activated') { clearTimeout(timeout); resolve(); }
+                if (this.state === 'redundant') { clearTimeout(timeout); reject(new Error('Service worker became redundant')); }
+            });
+        });
+
+        const resp = await fetch('/push/vapid-public-key');
+        const { public_key } = await resp.json();
+        const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: _urlB64(public_key) });
+        await fetch('/push/subscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(sub.toJSON()) });
+        setPushState('subscribed');
+    } catch(e) { alert('Failed to enable: ' + e.message); enableBtn.disabled = false; enableBtn.textContent = 'Enable'; }
+}
+
+async function pushDisable() {
+    disableBtn.disabled = true;
+    disableBtn.textContent = 'Disabling\u2026';
+    try {
+        const reg = await navigator.serviceWorker.getRegistration('/static/sw.js');
+        let endpoint = null;
+        if (reg) {
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) { endpoint = sub.endpoint; await sub.unsubscribe(); }
+        }
+        localStorage.setItem('push_disabled', '1');
+        await fetch('/push/unsubscribe', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ endpoint }) });
+        setPushState('unsubscribed');
+    } catch(e) { alert('Failed to disable: ' + e.message); }
+    disableBtn.disabled = false;
+    disableBtn.textContent = 'Disable';
+}
+
+async function pushTest() {
+    testBtn.disabled = true;
+    testBtn.textContent = 'Sending\u2026';
+    try {
+        const resp = await fetch('/api/test-push', { method: 'POST' });
+        const data = await resp.json();
+        if (data.ok) { alert('Test push sent! Check your browser notifications.'); }
+        else { alert('Error: ' + (data.error || 'Unknown')); }
+    } catch(e) { alert('Network error.'); }
+    testBtn.disabled = false;
+    testBtn.textContent = 'Send Test Push';
+}
+
+checkPushState();
 </script>
 {% endblock %}

@@ -6,7 +6,7 @@ import json
 import os
 from apscheduler.schedulers.background import BackgroundScheduler
 
-from tracker import authenticate, fetch_application_detail, fetch_applications
+from tracker import refresh_id_token, fetch_application_detail
 from notifier import notify
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
@@ -63,13 +63,20 @@ def poll_for_changes():
     creds = accounts[0]
 
     try:
-        auth = authenticate(creds["uci"], creds["password"])
+        auth = refresh_id_token(creds["refresh_token"])
         id_token = auth["IdToken"]
     except Exception as e:
-        print(f"[scheduler] Auth failed: {e}")
+        print(f"[scheduler] Token refresh failed (user must log in again): {e}")
         return
 
-    for app_num, old_data in tracked.items():
+    # Inject web push subscriptions into notification settings
+    notif_settings["web_push"] = {
+        "enabled": bool(cfg.get("push_subscriptions")),
+        "subscriptions": cfg.get("push_subscriptions", []),
+        "private_key": cfg.get("vapid", {}).get("private_key", ""),
+    }
+
+    for app_num, old_data in list(tracked.items()):
         try:
             new_data = fetch_application_detail(id_token, app_num, creds["uci"])
         except Exception as e:
