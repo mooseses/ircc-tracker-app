@@ -39,6 +39,7 @@ jobs:
           pip install pyinstaller
 
       - name: Build with PyInstaller
+        shell: bash
         run: |
           python -m PyInstaller \
             --name "IRCC Tracker" \
